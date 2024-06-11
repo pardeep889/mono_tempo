@@ -24,7 +24,7 @@ router.use("/payment",paymentsRoute)
 
 
 router.use("/", (req, res) => {
-  res.status(200).send("Explore Service is up and running on EC2!");
+  res.status(200).send("Tempospace is running.");
 });
 
 module.exports = router;
