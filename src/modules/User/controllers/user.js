@@ -18,7 +18,6 @@ const logingUser = async (req, res) => {
     if (error) {
       return res.status(statusCode).json({ success: false, message: response });
     }
-    console.log("first", response);
 
     return res.status(statusCode).json({ success: true, message: response });
   } catch (err) {
@@ -33,9 +32,9 @@ const createUser = async (req, res) => {
   try {
     const { response, statusCode, error } = await userCreate(req.body);
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response , error: false});
+      return res.status(statusCode).json({ success: false, message: response , error: error});
     }
-    return res.status(statusCode).json({ success: true, message: response, error: true });
+    return res.status(statusCode).json({ success: true, message: response, error: error });
   } catch (err) {
     console.error(err);
     return res

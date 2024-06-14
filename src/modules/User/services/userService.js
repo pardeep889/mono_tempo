@@ -3,7 +3,9 @@ const secretKey = "TEST_SECRET_KEY";
 const db = require("../../../../sequelize/models");
 const bcrypt = require("bcrypt");
 const { Sequelize } = require("sequelize");
-const { generateRandomCode } = require("../../util/awsHelper");
+const { generateRandomCode, generateRandomCodeNumber8Digit } = require("../../util/util");
+const generateUUID = require("../../util/ uuidGenerator");
+const sendEmail = require("../../util/sendEmail");
 const saltRounds = 10;
 
 async function getUserById(userId) {
@@ -66,6 +68,13 @@ function generateToken(user) {
 
 async function userCreate(userData) {
   try {
+    const uid = generateUUID();
+    const code = generateRandomCodeNumber8Digit();
+    const otpData = {
+        userName: `${userData.firstName} ${userData.lastName}`,
+        otp: code,
+    };
+ 
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
     const time = (new Date().getTime()).toString();
     await db.User.create({
@@ -77,7 +86,7 @@ async function userCreate(userData) {
       userType: userData.userType,
       isEmailVerified: false,
       accountStatus: "active",
-      uid: userData.uid,
+      uid: uid,
       fullName: userData.fullName,
       location: userData.location,
       username: userData.username,
@@ -85,10 +94,12 @@ async function userCreate(userData) {
       stripeCustomerId: userData.stripeCustomerId,
       userStatus: userData.userStatus,
       isSubscribed: userData.isSubscribed,
+      forgotLink: code,
+      passwordChangeRequired: false,
       createdAt: userData.createdAt,
       updatedAt: time
     });
-
+    sendEmail(userData.email, 'otpTemplate', otpData);
     return { response:"user created successfully!", statusCode: 200, error: false };
   } catch (error) {
     if (error instanceof Sequelize.UniqueConstraintError) {
@@ -142,35 +153,60 @@ async function changePasswordService(email, old_password, new_password) {
 }
 
 async function forgotPasswordService(email) {
-  const code = generateRandomCode(8);
   try {
-    db.User.update(
+    // Find the user based on the email
+    const userData = await db.User.findOne({ where: { email: email } });
+
+    if (!userData) {
+      return { response: "User not found", statusCode: 404, error: true };
+    }
+
+    // Generate a random 8-digit code
+    const code = generateRandomCodeNumber8Digit();
+
+    // Update the user's forgotLink field with the generated code
+    await db.User.update(
       {
         forgotLink: code,
       },
       { where: { email: email } }
     );
-    return { response: code, statusCode: 200, error: false };
+
+    // Prepare data for the email template
+    const otpData = {
+      userName: `${userData.firstName} ${userData.lastName}`,
+      otp: code,
+    };
+
+    // Send email with OTP data
+    sendEmail(userData.email, 'forgotTemplate', otpData);
+
+    return { response: "Please check your email", statusCode: 200, error: false };
   } catch (error) {
-    return { response: error, statusCode: 400, error: true };
+    return { response: error.message, statusCode: 500, error: true };
   }
 }
 async function confirmLinkService(forgotlink) {
   try {
-    const dbResponse = await db.User.findOne({
-      where: { forgotLink: forgotlink },
-    });
-    return {
-      response: {
-        email: dbResponse.dataValues.email,
-        fistName: dbResponse.dataValues.firstName,
-        forgotLink: dbResponse.dataValues.forgotLink,
-      },
-      statusCode: 200,
-      error: false,
-    };
+    // Find the user based on forgotLink
+    const user = await db.User.findOne({ where: { forgotLink: forgotlink } });
+    console.log(user)
+
+    if (!user) {
+    return { response: 'User not found.', statusCode: 400, error: true };
+    }
+
+    // Update the user instance
+    user.isEmailVerified = true;
+    user.forgotLink = null; // Assuming you want to clear the forgotLink
+
+    // Save the updated user instance
+    await user.save();
+
+    return { response: "Email Verified...", statusCode: 200, error: true };
   } catch (error) {
-    return { response: error, statusCode: 400, error: true };
+    console.error('Error confirming link:', error);
+    return { response: error, statusCode: 500, error: true };
   }
 }
 async function confirmPasswordService(email, password,forgotLink) {
