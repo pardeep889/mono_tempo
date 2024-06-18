@@ -8,7 +8,7 @@ const {
 const db = require("../../../../sequelize/models/category");
 
 const createCategory = async (req, res) => {
-  const loggedInUser = JSON.parse(req.headers["x-logged-in-user"]);
+  const loggedInUser = req.user;
   const userId =loggedInUser.userId;
     const { response, statusCode, error } = await categoryServices(req.body,userId);
     console.log("errorrrrr",error)
@@ -28,8 +28,8 @@ const fetchAllCategory = async (req, res) => {
     pageSize
   );
   try {
-    if (error) return res.status(statusCode).send(response);
-    return res.status(statusCode).send(response);
+    if (error) return res.status(statusCode).json({message: response, error: true, success: false});
+    return res.status(statusCode).json({message: response, error: false, success: true});
   } catch (error) {
     return res.status(400).json("error");
   }
@@ -47,13 +47,13 @@ const fetchCategoryById = async (req, res) => {
   }
 };
 const deleteCategory = async (req, res) => {
-  const loggedInUser = JSON.parse(req.headers["x-logged-in-user"]);
+  const loggedInUser = req.user;
   const userId = loggedInUser.userId;
   const categoryId = req.params.categoryId;
   const { response, statusCode, error } = await deleteCategoryByIdService(categoryId,userId);
   try {
-    if (error) return res.status(statusCode).send(response);
-    return res.status(statusCode).send(response);
+    if (error) return res.status(statusCode).json({message: response, error: true, success: false});
+    return res.status(statusCode).json({message: response, error: false, success: true});
   } catch (error) {
     console.log("Error:", error);
     return res.status(400).json("error");

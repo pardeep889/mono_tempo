@@ -21,6 +21,11 @@ module.exports = (sequelize, DataTypes) => {
         values: Object.values(["active", "inactive","deleted", "pending"]),
         defaultValue: "active",
       },
+      role: {
+        type: DataTypes.ENUM,
+        values: Object.values(["USER", "ADMIN","MOD"]),
+        defaultValue: "USER",
+      },
       fullName: {
         type: DataTypes.STRING(255),
         allowNull: true,

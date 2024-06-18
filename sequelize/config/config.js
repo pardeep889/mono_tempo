@@ -13,7 +13,7 @@ development: {
     password: process.env.DB_PASSWORD || 'space-41153200',
     database: process.env.DB_NAME || 'tempospace',
     host: process.env.DB_HOST || 'tempospace.postgres.database.azure.com',
-    logging: true,
+    logging: false,
     dialectOptions: {
       ssl: {
         require: true, // This will help you connect to Azure DB with SSL

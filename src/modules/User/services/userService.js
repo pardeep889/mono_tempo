@@ -42,6 +42,7 @@ async function userLogin(email, password) {
     const token = generateToken({
       userId: user.id,
       email: user.email,
+      role: user.role,
     });
     
     return { response: {
@@ -52,7 +53,8 @@ async function userLogin(email, password) {
         lastName: user.lastName,
         accountStatus: user.accountStatus,
         stripeCustomerId: user.stripeCustomerId,
-        isSubscribed: user.isSubscribed
+        isSubscribed: user.isSubscribed,
+        role: user.role
       },
       token: token
     }, statusCode: 200, error: false };
