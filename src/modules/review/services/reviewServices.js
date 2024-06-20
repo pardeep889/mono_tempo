@@ -4,16 +4,12 @@ const db = require("../../../../sequelize/models");
 const { Explore } = require("../../../../sequelize/models");
 
 
-const reviewServices = async (userId,data) => {
+const reviewServices = async (userId, uid, data) => {
   try {
-    const dbResponse = await Review.create({
-      rating: data.rating,
-      text: data.text,
-      userId: userId,
-    });
     const explore = await db.Explore.findOne({
       where: { id: data.exploreId }
     });
+
     if (!explore) {
       return {
         response: "Invalid exploreId",
@@ -21,13 +17,20 @@ const reviewServices = async (userId,data) => {
         error: true,
       };
     }
+
+    const dbResponse = await Review.create({
+      rating: data.rating,
+      text: data.text,
+      userId: userId,
+      uid: uid,
+      exploreId: data.exploreId,
+    });
+    
     if (explore) {
       console.log("increment", explore.totalReviewsCount)
       explore.totalReviewsCount =Number(explore.totalReviewsCount || 0) + 1;
-      console.log("here bro", explore.totalReviewsCount)
       await explore.save(); 
     }
-    console.log(dbResponse.dataValues);
     return {
       response: dbResponse.dataValues,
       statusCode: 200,
@@ -43,17 +46,21 @@ const reviewServices = async (userId,data) => {
   }
 };
 
-const fetchAllReviewService = async(start, pageSize)=>{
+const fetchAllReviewService = async (start, pageSize, exploreId) => {
   try {
     const dbResponse = await db.Review.findAll({
+      where: {
+        exploreId: exploreId
+      },
       offset: start,
       limit: pageSize,
     });
-    return { response:dbResponse,statusCode:200,error:false}
+    return { response: dbResponse, statusCode: 200, error: false };
   } catch (error) {
-  return { response:error,statusCode:400,error:true}
+    return { response: error, statusCode: 400, error: true };
   }
 };
+
 
 const fetchReviewByIdServices = async (reviewId) => {
   try {
@@ -125,6 +132,7 @@ const updateReviewByIdService = async (userId,reviewId, updatedReviewData) => {
       error: false,
     };
   } catch (error) {
+    console.log(error)
     return {
       response: error,
       statusCode: 400,
@@ -132,7 +140,7 @@ const updateReviewByIdService = async (userId,reviewId, updatedReviewData) => {
     };
   }
 };
-const reviewRepliesService =async(userId,reviewId)=>{
+const reviewRepliesService =async(userId,uid, reviewId)=>{
   console.log("user",userId,reviewId);
   const isReviewExist = await db.Review.findOne({
     where:{id:reviewId}
@@ -142,7 +150,7 @@ const reviewRepliesService =async(userId,reviewId)=>{
   }
   try {
     const exploreDbResponse = await db.Explore.findOne({
-      where:{userId:userId}
+      where:{uid:uid}
     })
     if(exploreDbResponse !== null){
       const resp = await db.ReviewsReplies.create({
@@ -154,20 +162,21 @@ const reviewRepliesService =async(userId,reviewId)=>{
       console.log("exploreResp",resp.dataValues)
       return{response:"Reply post Successfully",statusCode:200,error:false}
     }
-    const buyerDbResponse = await db.Buyer.findOne({
-      where:{userId:4}
-    })
-    if(buyerDbResponse !== null){
+    // const buyerDbResponse = await db.Buyer.findOne({
+    //   where:{userId:4}
+    // })
+    // if(buyerDbResponse !== null){
       const resp = await db.ReviewsReplies.create({
             userId: userId,
+            uid: uid,
             reviewId:reviewId,
             text:"This is my review reply",
             isCreater:false
           })
           console.log("buyerResp",resp.dataValues);
           return{response:"Reply post Successfully",statusCode:200,error:false}
-    }
-    return{response:"User nor buyer nor creator",statusCode:400,error:true}
+    // }
+    // return{response:"User nor buyer nor creator",statusCode:400,error:true}
   } catch (error) {
     return{response:"error",statusCode:400,error:true}
   }

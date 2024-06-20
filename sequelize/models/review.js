@@ -17,6 +17,10 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     text: {
       type: DataTypes.TEXT,
       defaultValue: null,
@@ -25,6 +29,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    exploreId: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }
   },
   {
     sequelize,

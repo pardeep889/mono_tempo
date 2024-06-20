@@ -43,6 +43,7 @@ async function userLogin(email, password) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      uid: user.uid
     });
     
     return { response: {
@@ -54,7 +55,8 @@ async function userLogin(email, password) {
         accountStatus: user.accountStatus,
         stripeCustomerId: user.stripeCustomerId,
         isSubscribed: user.isSubscribed,
-        role: user.role
+        role: user.role,
+        uid: user.uid
       },
       token: token
     }, statusCode: 200, error: false };
