@@ -23,9 +23,7 @@ jobs:
 
       - name: Install client dependencies and build
         run: |
-          cd client
-          npm install
-          npm run build
+          npm build-client
 
       - name: npm install, build, and test
         run: |
