@@ -2,3 +2,5 @@
 node_modules
 package-lock.json
 email_Test.js
+frontend/node_modules
+build
