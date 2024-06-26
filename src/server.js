@@ -7,11 +7,11 @@ const apiRoutes = require('./app'); // Assuming this is your API routes
 app.use('/api', apiRoutes);
 
 // Serve static assets (React build files)
-app.use(express.static(path.join(__dirname, '../client/build')));
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 
 const PORT = process.env.PORT || 7000;
