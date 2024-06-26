@@ -1,4 +1,7 @@
-name: Build and deploy Node.js + React app to Azure Web App
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Node.js app to Azure Web App - tempospace
 
 on:
   push:
@@ -7,58 +10,52 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
 
-      - name: Install backend dependencies and build
-        working-directory: .
+      - name: npm install, build, and test
         run: |
           npm install
-          # Adjust the build command for your Node.js server if needed
-          # npm run build
-
-      - name: Install client dependencies and build
-        working-directory: client
-        run: |
-          npm install
-          npm run build
+          npm run build --if-present
 
       - name: Zip artifact for deployment
-        run: |
-          zip -r deploy.zip ./backend ./client/build
+        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: deploy-package
-          path: deploy.zip
+          name: node-app
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-deploy
+    needs: build
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Download artifact from build job
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: deploy-package
+          name: node-app
 
-      - name: Deploy to Azure Web App
+      - name: Unzip artifact for deployment
+        run: unzip release.zip
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'tempospace'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_D1B6D278505342D48C2188023E40C37F }}
-          package: deploy.zip
+          package: .
