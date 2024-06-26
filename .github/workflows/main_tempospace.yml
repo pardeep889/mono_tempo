@@ -23,7 +23,7 @@ jobs:
 
       - name: Install client dependencies and build
         run: |
-          cd ../client
+          cd client
           npm install
           npm run build
 
