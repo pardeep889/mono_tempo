@@ -35,7 +35,7 @@ jobs:
       - name: Zip artifact for deployment
         run: |
           zip -r release.zip \
-            sequelize src controllers package.json \
+            node_modules sequelize src controllers package.json \
             $(find frontend/build -type f) $(find frontend/build -type d -name '*')
 
       - name: Upload artifact for deployment job
