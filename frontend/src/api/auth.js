@@ -1,11 +1,9 @@
 import axios from "axios"
-
-const BACKEND_URL = import.meta.env.VITE_API_URL;
-
+import { BACKEND_URL } from "./config";
 
 export const loginApi = async (data) => {
     try {
-      const response = await axios.post(`/api/user/login`, data);
+      const response = await axios.post(`${BACKEND_URL}/user/login`, data);
       console.log("Data",response.data)
       return response.data;
     } catch (error) {
