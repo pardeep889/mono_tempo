@@ -24,7 +24,6 @@ async function getUserById(userId) {
   }
 }
 async function userLogin(email, password) {
-  console.log("body",email,password)
   try {
 
     const user = await db.User.findOne({ where: { email } });
