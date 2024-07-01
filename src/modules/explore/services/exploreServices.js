@@ -2,7 +2,7 @@ const db = require("../../../../sequelize/models");
 
 const exploreDataService = async (data) => {
   try {
-    await db.Explore.create({...data});
+    await db.Explore.create({ ...data });
     return {
       response: "Data Added Successfully",
       statusCode: 200,
@@ -13,10 +13,10 @@ const exploreDataService = async (data) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const deleteExploreService = async (exploreId,userId) => {
+const deleteExploreService = async (exploreId, userId) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id:exploreId,userId:userId },
+      where: { id: exploreId, userId: userId },
     });
     if (dbResponse == null) {
       return {
@@ -43,7 +43,7 @@ const deleteExploreService = async (exploreId,userId) => {
 const getExploreByIdService = async (exploreId) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId},
+      where: { id: exploreId },
     });
     if (dbResponse === null) {
       return {
@@ -58,8 +58,7 @@ const getExploreByIdService = async (exploreId) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const getExploreService = async (start, pageSize) => {
-  
+const getExploreService = async (start, pageSize, uid) => {
   try {
     const dbResponse = await db.sequelize.query(
       `SELECT 
@@ -94,14 +93,18 @@ const getExploreService = async (start, pageSize) => {
                   WHERE u."unitNumber" = v."unitNumber" AND e."docId" = v."exploreId"
               )
           )
-      ) AS "units"
+      ) AS "units",
+      CASE
+      WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
+      ELSE false
+  END AS "owner"
   FROM "Explores" e
   LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
   LEFT JOIN "Units" u ON e."docId" = u."exploreId"
   GROUP BY e."id", tv."id"
   LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start },
+        replacements: { limit: pageSize, offset: start , uid},
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
@@ -112,10 +115,11 @@ const getExploreService = async (start, pageSize) => {
   }
 };
 
-
-const updateExploreService = async (exploreId,userId,data) => {
+const updateExploreService = async (exploreId, userId, data) => {
   try {
-    const dbResponse = await db.Explore.findOne({ where: { id:exploreId , userId:userId} });
+    const dbResponse = await db.Explore.findOne({
+      where: { id: exploreId, userId: userId },
+    });
     if (dbResponse === null) {
       return {
         error: true,
@@ -154,34 +158,37 @@ const updateExploreService = async (exploreId,userId,data) => {
   }
 };
 
-const   addNewTagService = async (exploreId,userId,newTag) => {
+const addNewTagService = async (exploreId, userId, newTag) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: {id:exploreId,userId:userId},
+      where: { id: exploreId, userId: userId },
     });
-    if(dbResponse === null){
-      return{response:"Explore not found",statusCode:400,error:true}
+    if (dbResponse === null) {
+      return { response: "Explore not found", statusCode: 400, error: true };
     }
     let existingTags = dbResponse.dataValues.tags;
-    if(existingTags.length> 0){
+    if (existingTags.length > 0) {
       let isTagExist = existingTags[0].indexOf(newTag);
-    console.log("istagExist",isTagExist)
-    let updatedTags = [];
-    if (isTagExist === -1) {
-      updatedTags = existingTags[0].concat(newTag);
-      await db.Explore.update({tags: [updatedTags],},
-        { where: {id:exploreId} }
-      );
+      console.log("istagExist", isTagExist);
+      let updatedTags = [];
+      if (isTagExist === -1) {
+        updatedTags = existingTags[0].concat(newTag);
+        await db.Explore.update(
+          { tags: [updatedTags] },
+          { where: { id: exploreId } }
+        );
+      } else {
+        return { response: "Tag already exists", error: true, statusCode: 400 };
+      }
     } else {
-      return { response: "Tag already exists", error: true, statusCode: 400 };
-    }   
-    }else{
       existingTags.push(newTag);
-      console.log("abc",existingTags)
-      await db.Explore.update({
-        tags:[existingTags]
-      },{where:{id:exploreId}
-      })
+      console.log("abc", existingTags);
+      await db.Explore.update(
+        {
+          tags: [existingTags],
+        },
+        { where: { id: exploreId } }
+      );
     }
     return {
       response: "Tags update succesfully",
@@ -192,13 +199,13 @@ const   addNewTagService = async (exploreId,userId,newTag) => {
     return { response: "error", statusCode: 400, error: true };
   }
 };
-const removeTagService = async (exploreId,userId,oldTag) => {
+const removeTagService = async (exploreId, userId, oldTag) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id:exploreId,userId:userId },
+      where: { id: exploreId, userId: userId },
     });
     let prevArray = dbResponse.dataValues.tags;
-    console.log("prevArr",prevArray)
+    console.log("prevArr", prevArray);
     const index = prevArray[0].indexOf(oldTag);
     console.log("index", index);
     let updatedArray = [];
@@ -206,12 +213,12 @@ const removeTagService = async (exploreId,userId,oldTag) => {
       updatedArray = prevArray[0]
         .slice(0, index)
         .concat(prevArray[0].slice(index + 1));
-        console.log("updated Array",updatedArray)
+      console.log("updated Array", updatedArray);
       await db.Explore.update(
         {
           tags: [updatedArray],
         },
-        { where: { id:exploreId} }
+        { where: { id: exploreId } }
       );
       console.log(`Array after removing ${oldTag}: ${updatedArray}`);
     } else {
@@ -231,10 +238,10 @@ const removeTagService = async (exploreId,userId,oldTag) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const updateTagService = async (userId,exploreId,tagToFind,newTag) => {
+const updateTagService = async (userId, exploreId, tagToFind, newTag) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id:exploreId ,userId:userId},
+      where: { id: exploreId, userId: userId },
     });
     if (dbResponse === null) {
       return { response: "Explore not found !", statusCode: 400, error: true };
@@ -243,10 +250,12 @@ const updateTagService = async (userId,exploreId,tagToFind,newTag) => {
     const index = prevArray[0].indexOf(tagToFind);
     if (index !== -1) {
       prevArray[index] = newTag;
-        await db.Explore.update({
-        tags:[prevArray]
-        },{where:{id:exploreId}
-        })
+      await db.Explore.update(
+        {
+          tags: [prevArray],
+        },
+        { where: { id: exploreId } }
+      );
       return {
         response: "Tag Updated SuccessFully!",
         statusCode: 200,

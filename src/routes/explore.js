@@ -1,10 +1,11 @@
 const router = require('express').Router();
+const { authenticateJWT } = require('../middleware/auth');
 const exploreController = require('../modules/explore/controllers/explore');
 
 // ************** public routes *****************  //
 router.get('/get-explore-by-id/:id',exploreController.getExploreById);
 
-router.get('/fetch-explores',exploreController.getExplore);
+router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
 
 
 

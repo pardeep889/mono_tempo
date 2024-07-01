@@ -1,16 +1,19 @@
 const db = require("../../../../sequelize/models");
-const createBuyerService =async(transactionId,exploreId,userId)=>{
+const { getFormattedDate } = require("../../util/util");
+const createBuyerService =async(exploreId,uid, custId)=>{
     try {
+        const purchasedDate = getFormattedDate();
         const dbResponse  = await db.Buyer.findOne({
-            where:{transactionId}
+            where:{uid, exploreId}
         });
         if(dbResponse !==null){
-            return{ response:"Transaction Id already exists!",statusCode:400,error:true}
+            return{ response:"You have already purchased this explore",statusCode:400,error:true}
         }else{
         await db.Buyer.create({
-            transactionId:transactionId,
             exploreId:exploreId,
-            userId:userId
+            uid,
+            custId,
+            purchasedDate: purchasedDate
         })
         return {response:'buyer created Successfully',statusCode:200,error:false}}
     } catch (error) {

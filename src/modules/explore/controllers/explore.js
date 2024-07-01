@@ -48,9 +48,11 @@ const getExploreById = async (req, res) => {
 const getExplore = async (req, res) => {
   let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
+  const {uid} = req.user;
   const { response, statusCode, error } = await getExploreService(
     start,
-    pageSize
+    pageSize,
+    uid
   );
   try {
     if (error) return res.status(statusCode).send(response);
