@@ -16,15 +16,24 @@ const logingUser = async (req, res) => {
   try {
     const { response, statusCode, error } = await userLogin(email, password);
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response });
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
     }
-
-    return res.status(statusCode).json({ success: true, message: response });
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
 };
 
@@ -32,20 +41,35 @@ const createUser = async (req, res) => {
   try {
     const { response, statusCode, error } = await userCreate(req.body);
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response , error: error});
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
     }
-    return res.status(statusCode).json({ success: true, message: response, error: error });
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
 };
+
 const changePassword = async (req, res) => {
   const { error, value } = changePasswordSchema.validate(req.body);
   if (error) {
-    return res.status(400).json({ success: false,message: error.details[0].message });
+    return res.status(400).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
   const { email, old_password, new_password } = req.body;
 
@@ -56,38 +80,84 @@ const changePassword = async (req, res) => {
       new_password
     );
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response });
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
     }
-    return res.status(statusCode).json({ success: true, message: response });
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
 };
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
-  const { response, statusCode, error } = await forgotPasswordService(email);
-  if (error) {
-    return res.status(statusCode).json({ success: false, message: response });
+  try {
+    const { response, statusCode, error } = await forgotPasswordService(email);
+    if (error) {
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
+    }
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
-  return res.status(statusCode).json({ success: true, message: response });
 };
 
 const confirmLink = async (req, res) => {
   const forgotlink = req.params.link;
-  const { response, statusCode, error } = await confirmLinkService(forgotlink);
-  if (error) {
-    return res.status(statusCode).json({ success: false, message: response });
+  try {
+    const { response, statusCode, error } = await confirmLinkService(forgotlink);
+    if (error) {
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
+    }
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
-  return res.status(statusCode).json({ success: true, message: response });
 };
 
 const confirmPassword = async (req, res) => {
   const { error, value } = verifyLinkSchema.validate(req.body);
   if (error) {
-    return res.status(400).json({ success: false, message: error.details[0].message });
+    return res.status(400).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
   const { email, password, forgotLink } = req.body;
   try {
@@ -97,20 +167,34 @@ const confirmPassword = async (req, res) => {
       forgotLink
     );
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response });
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
     }
-    return res.status(statusCode).json({ success: true, message: response });
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
 };
 
 const recoverPassword = async (req, res) => {
   const { email, new_password } = req.body;
   if(new_password.length < 5){
-    return res.status(500).json({ success: false, message: "The password must be longer than 5 characters." });
+    return res.status(500).json({
+      success: false,
+      message: "The password must be longer than 5 characters.",
+      data: null
+    });
   }
 
   try {
@@ -119,33 +203,58 @@ const recoverPassword = async (req, res) => {
       new_password
     );
     if (error) {
-      return res.status(statusCode).json({ success: false, message: response });
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
     }
-    return res.status(statusCode).json({ success: true, message: response });
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
 };
-
 
 const fetchUserByIdController = async (req, res) => {
   const userId = req.params.id;
-  const { success, statusCode, error, response } = await getUserById(userId);
-  if (error) {
-    return res.status(statusCode).json({ error, success, response});
+  try {
+    const { success, statusCode, error, response } = await getUserById(userId);
+    if (error) {
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
+    }
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
   }
-  return res.status(statusCode).json({ error, success, response });
-
 };
+
 module.exports = {
-  logingUser: logingUser,
-  createUser: createUser,
-  changePassword: changePassword,
-  confirmPassword: confirmPassword,
-  forgotPassword: forgotPassword,
-  confirmLink: confirmLink,
-  recoverPassword:recoverPassword,
-  fetchUserByIdController: fetchUserByIdController
+  logingUser,
+  createUser,
+  changePassword,
+  confirmPassword,
+  forgotPassword,
+  confirmLink,
+  recoverPassword,
+  fetchUserByIdController,
 };

@@ -63,6 +63,16 @@ const getExploreService = async (start, pageSize, uid) => {
     const dbResponse = await db.sequelize.query(
       `SELECT 
       e.*,
+      c.*,
+      json_build_object(
+        'id', c."id",
+        'uid', c."uid",
+        'fullName', c."fullName",
+        'email', c."email",
+        'profileImageUrl', c."profileImageUrl",
+        'status', c."accountStatus",
+        'role', c."role"
+    ) AS "creatorInfo",
       json_build_object(
           'id', tv."id",
           'uid', tv."uid",
@@ -101,7 +111,8 @@ const getExploreService = async (start, pageSize, uid) => {
   FROM "Explores" e
   LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
   LEFT JOIN "Units" u ON e."docId" = u."exploreId"
-  GROUP BY e."id", tv."id"
+  LEFT JOIN "Users" c ON e."uid" = c."uid"
+  GROUP BY e."id", tv."id", c."id"
   LIMIT :limit OFFSET :offset`,
       {
         replacements: { limit: pageSize, offset: start , uid},
