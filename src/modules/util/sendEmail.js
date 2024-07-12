@@ -8,7 +8,7 @@ const connectionString = "endpoint=https://tempo-rg-email-resource.unitedstates.
 const client = new EmailClient(connectionString);
 
 // Function to send email with a template
-async function sendEmail(recipientEmail, templateName, templateData) {
+async function sendEmail(recipientEmail, templateName, templateData, subject="Your Email Subject") {
     try {
         // Read the email template file
         const templateFile = path.resolve(__dirname,'templates', `${templateName}.ejs`);
@@ -21,7 +21,7 @@ async function sendEmail(recipientEmail, templateName, templateData) {
         const emailMessage = {
             senderAddress: "DoNotReply@tempospace.co", // Verified sender address
             content: {
-                subject: "Your Email Subject", // Customize the subject
+                subject: subject, // Customize the subject
                 html: htmlContent,
             },
             recipients: {

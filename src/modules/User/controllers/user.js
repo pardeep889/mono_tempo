@@ -132,7 +132,7 @@ const confirmLink = async (req, res) => {
     if (error) {
       return res.status(statusCode).json({
         success: false,
-        message: "Error",
+        message: response,
         data: null
       });
     }
@@ -142,6 +142,7 @@ const confirmLink = async (req, res) => {
       data: response
     });
   } catch (error) {
+    console.log("error",error)
     return res.status(500).json({
       success: false,
       message: "Error",

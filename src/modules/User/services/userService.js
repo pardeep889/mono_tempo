@@ -182,7 +182,7 @@ async function forgotPasswordService(email) {
     };
 
     // Send email with OTP data
-    sendEmail(userData.email, 'forgotTemplate', otpData);
+    sendEmail(userData.email, 'forgotTemplate', otpData, "Tempospace: Your One Time Password");
 
     return { response: "Please check your email", statusCode: 200, error: false };
   } catch (error) {
@@ -193,10 +193,8 @@ async function confirmLinkService(forgotlink) {
   try {
     // Find the user based on forgotLink
     const user = await db.User.findOne({ where: { forgotLink: forgotlink } });
-    console.log(user)
-
     if (!user) {
-    return { response: 'User not found.', statusCode: 400, error: true };
+    return { response: 'OTP is not valid.', statusCode: 400, error: true };
     }
 
     // Update the user instance
@@ -206,7 +204,7 @@ async function confirmLinkService(forgotlink) {
     // Save the updated user instance
     await user.save();
 
-    return { response: "Email Verified...", statusCode: 200, error: true };
+    return { response: "Email Verified...", statusCode: 200, error: false };
   } catch (error) {
     console.error('Error confirming link:', error);
     return { response: error, statusCode: 500, error: true };
