@@ -58,73 +58,102 @@ const getExploreByIdService = async (exploreId) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const getExploreService = async (start, pageSize, uid) => {
+const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude) => {
+  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude);
+
+  let categoryCondition = "";
+  let locationCondition = "";
+
+  if (category) {
+    categoryCondition = `AND e."categoryID" = :category `;
+  }
+
+  if (locationFilterType && locationFilterName) {
+    if (locationFilterType === 'country') {
+      locationCondition += `AND e."location"->'country'->>'name' = :locationFilterName `;
+    } else if (locationFilterType === 'city') {
+      locationCondition += `AND e."location"->'city'->>'name' = :locationFilterName `;
+    }
+    else if (locationFilterType === 'venue') {
+      locationCondition += `AND e."location"->'venue' = :locationFilterName `;
+    }
+  }
+
+  if (latitude && longitude) {
+    locationCondition += `AND (e."location"->'location'->>'latitude')::numeric = :latitude `;
+    locationCondition += `AND (e."location"->'location'->>'longitude')::numeric = :longitude `;
+  }
+
   try {
     const dbResponse = await db.sequelize.query(
       `SELECT 
-      e.*,
-      c.*,
-      json_build_object(
-        'id', c."id",
-        'uid', c."uid",
-        'fullName', c."fullName",
-        'email', c."email",
-        'profileImageUrl', c."profileImageUrl",
-        'status', c."accountStatus",
-        'role', c."role"
-    ) AS "creatorInfo",
-      json_build_object(
+        e.*,
+        c.*,
+        json_build_object(
+          'id', c."id",
+          'uid', c."uid",
+          'fullName', c."fullName",
+          'email', c."email",
+          'profileImageUrl', c."profileImageUrl",
+          'status', c."accountStatus",
+          'role', c."role"
+        ) AS "creatorInfo",
+        json_build_object(
           'id', tv."id",
           'uid', tv."uid",
           'exploreId', tv."exploreId",
           'videoPath', tv."videoPath",
           'coverImagePath', tv."coverImagePath",
           'localPath', tv."localPath"
-      ) AS "trailerVideo",
-      json_agg(
+        ) AS "trailerVideo",
+        json_agg(
           json_build_object(
-              'id', u."id",
-              'title', u."title",
-              'description', u."description",
-              'unitNumber', u."unitNumber",
-              'videos', (
-                  SELECT 
-                      json_agg(
-                          json_build_object(
-                              'id', v."id",
-                              'caption', v."caption",
-                              'videoNumber', v."videoNumber",
-                              'title', v."title",
-                              'exploreId', v."exploreId",
-                              'videoDetails', v."videoDetails"
-                          )
-                      )
-                  FROM "Videos" v
-                  WHERE u."unitNumber" = v."unitNumber" AND e."docId" = v."exploreId"
-              )
+            'id', u."id",
+            'title', u."title",
+            'description', u."description",
+            'unitNumber', u."unitNumber",
+            'videos', (
+              SELECT 
+                json_agg(
+                  json_build_object(
+                    'id', v."id",
+                    'caption', v."caption",
+                    'videoNumber', v."videoNumber",
+                    'title', v."title",
+                    'exploreId', v."exploreId",
+                    'videoDetails', v."videoDetails"
+                  )
+                )
+              FROM "Videos" v
+              WHERE u."unitNumber" = v."unitNumber" AND e."docId" = v."exploreId"
+            )
           )
-      ) AS "units",
-      CASE
-      WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
-      ELSE false
-  END AS "owner"
-  FROM "Explores" e
-  LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
-  LEFT JOIN "Units" u ON e."docId" = u."exploreId"
-  LEFT JOIN "Users" c ON e."uid" = c."uid"
-  GROUP BY e."id", tv."id", c."id"
-  LIMIT :limit OFFSET :offset`,
+        ) AS "units",
+        CASE
+          WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
+          ELSE false
+        END AS "owner",
+        e."location"::json AS "location"  -- Properly handle the location column as JSON
+      FROM "Explores" e
+      LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
+      LEFT JOIN "Units" u ON e."docId" = u."exploreId"
+      LEFT JOIN "Users" c ON e."uid" = c."uid"
+      WHERE 1=1 ${categoryCondition} ${locationCondition}
+      GROUP BY e."id", tv."id", c."id"
+      LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start , uid},
+        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude },
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
 
     return { response: dbResponse, statusCode: 200, error: false };
   } catch (error) {
+    console.log(error);
     return { response: error, statusCode: 400, error: true };
   }
 };
+
 
 const updateExploreService = async (exploreId, userId, data) => {
   try {
