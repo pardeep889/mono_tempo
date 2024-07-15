@@ -58,11 +58,12 @@ const getExploreByIdService = async (exploreId) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude) => {
-  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude);
+const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted) => {
+  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted);
 
   let categoryCondition = "";
   let locationCondition = "";
+  let promotedCondition = "";
 
   if (category) {
     categoryCondition = `AND e."categoryID" = :category `;
@@ -73,8 +74,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       locationCondition += `AND e."location"->'country'->>'name' = :locationFilterName `;
     } else if (locationFilterType === 'city') {
       locationCondition += `AND e."location"->'city'->>'name' = :locationFilterName `;
-    }
-    else if (locationFilterType === 'venue') {
+    } else if (locationFilterType === 'venue') {
       locationCondition += `AND e."location"->'venue' = :locationFilterName `;
     }
   }
@@ -82,6 +82,10 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
   if (latitude && longitude) {
     locationCondition += `AND (e."location"->'location'->>'latitude')::numeric = :latitude `;
     locationCondition += `AND (e."location"->'location'->>'longitude')::numeric = :longitude `;
+  }
+
+  if (promoted !== undefined) {
+    promotedCondition = `AND e."promoted" = :promoted `;
   }
 
   try {
@@ -138,11 +142,11 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
       LEFT JOIN "Units" u ON e."docId" = u."exploreId"
       LEFT JOIN "Users" c ON e."uid" = c."uid"
-      WHERE 1=1 ${categoryCondition} ${locationCondition}
+      WHERE 1=1 ${categoryCondition} ${locationCondition} ${promotedCondition}
       GROUP BY e."id", tv."id", c."id"
       LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude },
+        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted },
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
@@ -153,6 +157,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
     return { response: error, statusCode: 400, error: true };
   }
 };
+
 
 
 const updateExploreService = async (exploreId, userId, data) => {

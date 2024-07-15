@@ -73,6 +73,10 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         defaultValue: null,
       },
+      promoted : {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      }
     },
     {
       sequelize,

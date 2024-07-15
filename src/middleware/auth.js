@@ -7,7 +7,11 @@ exports.authenticateJWT = (req, res, next) => {
   const authHeader = req.header('Authorization');
 
   if (!authHeader) {
-    return res.status(401).json({ error: 'Access denied, no token provided' });
+    return res.status(401).json({
+      success: false,
+      message: "Access Denied | Token not Provided",
+      data: null
+    });
   }
   const token = authHeader.replace('Bearer ', '');
   try {
@@ -15,7 +19,10 @@ exports.authenticateJWT = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ 
+      success: false,
+      message: "Provided Token is not Valid/Expired",
+      data: null});
   }
 };
 

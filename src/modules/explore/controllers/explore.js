@@ -90,9 +90,9 @@ const getExplore = async (req, res) => {
   let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
   const { uid } = req.user;
-  const {locationFilterType, locationFilterName, category, latitude, longitude} = req.query;
+  const {locationFilterType, locationFilterName, category, latitude, longitude, promoted} = req.query;
   try {
-    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude);
+    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted);
     if (error) {
       return res.status(statusCode).json({
         success: false,
