@@ -92,6 +92,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
     const dbResponse = await db.sequelize.query(
       `SELECT 
         e.*,
+        e.id as exploreId,
         c.*,
         json_build_object(
           'id', c."id",
