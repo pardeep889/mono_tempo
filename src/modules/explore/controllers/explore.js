@@ -1,3 +1,4 @@
+const { response } = require("express");
 const {
   exploreDataService,
   deleteExploreService,
@@ -143,25 +144,25 @@ const updateExplore = async (req, res) => {
 const addTags = async (req, res) => {
   const exploreId = req.params.id;
   const newTag = req.body.tag;
-  const userId = req.user.userId;
+  const userId = req.user.uid;
   try {
     const { response, statusCode, error } = await addNewTagService(exploreId, userId, newTag);
     if (error) {
       return res.status(statusCode).json({
         success: false,
-        message: "Error",
-        data: response
+        message: response,
+        data: null
       });
     }
     return res.status(statusCode).json({
       success: true,
-      message: "Request successful",
+      message: "Tags update succesfully",
       data: response
     });
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: "Error",
+      message: response,
       data: null
     });
   }
@@ -195,16 +196,16 @@ const removeTag = async (req, res) => {
 };
 
 const updateTag = async (req, res) => {
-  const userId = req.user.userId;
+  const uid = req.user.uid;
   const exploreId = req.params.id;
   const { tagToFind, newTag } = req.body;
   try {
-    const { response, statusCode, error } = await updateTagService(userId, exploreId, tagToFind, newTag);
+    const { response, statusCode, error } = await updateTagService(uid, exploreId, tagToFind, newTag);
     if (error) {
       return res.status(statusCode).json({
         success: false,
-        message: "Error",
-        data: response
+        message: response,
+        data: null
       });
     }
     return res.status(statusCode).json({
@@ -215,7 +216,7 @@ const updateTag = async (req, res) => {
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: "Error",
+      message: "Internal Server Error",
       data: null
     });
   }

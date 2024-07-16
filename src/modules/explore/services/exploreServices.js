@@ -203,48 +203,39 @@ const updateExploreService = async (exploreId, userId, data) => {
     return { response: "error", statusCode: 400, error: true };
   }
 };
-
-const addNewTagService = async (exploreId, userId, newTag) => {
+const addNewTagService = async (exploreId, uid, newTag) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId, userId: userId },
+      where: { id: exploreId, uid: uid },
     });
     if (dbResponse === null) {
       return { response: "Explore not found", statusCode: 400, error: true };
     }
-    let existingTags = dbResponse.dataValues.tags;
-    if (existingTags.length > 0) {
-      let isTagExist = existingTags[0].indexOf(newTag);
-      console.log("istagExist", isTagExist);
-      let updatedTags = [];
-      if (isTagExist === -1) {
-        updatedTags = existingTags[0].concat(newTag);
-        await db.Explore.update(
-          { tags: [updatedTags] },
-          { where: { id: exploreId } }
-        );
-      } else {
-        return { response: "Tag already exists", error: true, statusCode: 400 };
-      }
-    } else {
-      existingTags.push(newTag);
-      console.log("abc", existingTags);
-      await db.Explore.update(
-        {
-          tags: [existingTags],
-        },
-        { where: { id: exploreId } }
-      );
+
+    let existingTags = dbResponse.dataValues.tags || [];
+
+    if (existingTags.includes(newTag)) {
+      return { response: "Tag already exists", statusCode: 400, error: true };
     }
+
+    existingTags.push(newTag);
+
+    await db.Explore.update(
+      { tags: existingTags },
+      { where: { id: exploreId } }
+    );
+
     return {
-      response: "Tags update succesfully",
+      response: newTag,
       statusCode: 200,
       error: false,
     };
   } catch (error) {
-    return { response: "error", statusCode: 400, error: true };
+    console.error("Error adding new tag:", error);
+    return { response: "An error occurred while adding the new tag.", statusCode: 500, error: true };
   }
 };
+
 const removeTagService = async (exploreId, userId, oldTag) => {
   try {
     const dbResponse = await db.Explore.findOne({
@@ -284,26 +275,31 @@ const removeTagService = async (exploreId, userId, oldTag) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const updateTagService = async (userId, exploreId, tagToFind, newTag) => {
+
+const updateTagService = async (uid, exploreId, tagToFind, newTag) => {
+  console.log(uid, exploreId, tagToFind, newTag);
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId, userId: userId },
+      where: { id: exploreId,uid: uid },
     });
+
     if (dbResponse === null) {
-      return { response: "Explore not found !", statusCode: 400, error: true };
+      return { response: "Explore not found!", statusCode: 400, error: true };
     }
-    let prevArray = dbResponse.dataValues.tags;
-    const index = prevArray[0].indexOf(tagToFind);
+
+    let prevArray = dbResponse.dataValues.tags || [];
+    const index = prevArray.indexOf(tagToFind);
+
     if (index !== -1) {
       prevArray[index] = newTag;
+
       await db.Explore.update(
-        {
-          tags: [prevArray],
-        },
+        { tags: prevArray },
         { where: { id: exploreId } }
       );
+
       return {
-        response: "Tag Updated SuccessFully!",
+        response: newTag,
         statusCode: 200,
         error: false,
       };
@@ -311,9 +307,11 @@ const updateTagService = async (userId, exploreId, tagToFind, newTag) => {
       return { response: "Tag Not Found!", statusCode: 400, error: true };
     }
   } catch (error) {
-    return { response: "error", statusCode: 400, error: true };
+    console.error("Error updating tag:", error);
+    return { response: "An error occurred while updating the tag.", statusCode: 500, error: true };
   }
 };
+
 
 module.exports = {
   exploreDataService: exploreDataService,

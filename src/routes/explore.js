@@ -17,8 +17,8 @@ router.delete('/auth/delete-explore/:id',exploreController.deleteExplore);
 router.post('/auth/update/:id',exploreController.updateExplore);
 
 
-router.post('/auth/update-tag/:id',exploreController.updateTag);
-router.post('/auth/add-new-tag/:id',exploreController.addTags);
-router.delete('/auth/remove-tag/:id',exploreController.removeTag);
+router.post('/auth/add-new-tag/:id',authenticateJWT, exploreController.addTags);
+router.post('/auth/update-tag/:id',authenticateJWT, exploreController.updateTag);
+router.delete('/auth/remove-tag/:id',authenticateJWT, exploreController.removeTag);
 
 module.exports= router;
