@@ -74,13 +74,13 @@ async function userCreate(userData) {
     const uid = generateUUID();
     const code = generateRandomCodeNumber8Digit();
     const otpData = {
-        userName: `${userData.firstName} ${userData.lastName}`,
-        otp: code,
+      userName: `${userData.firstName} ${userData.lastName}`,
+      otp: code,
     };
- 
+
     const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
     const time = (new Date().getTime()).toString();
-    await db.User.create({
+    const newUser = await db.User.create({
       email: userData.email,
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -100,10 +100,33 @@ async function userCreate(userData) {
       forgotLink: code,
       passwordChangeRequired: false,
       createdAt: userData.createdAt,
-      updatedAt: time
+      updatedAt: time,
     });
+
+    // Remove sensitive information before returning the user data
+    const userResponse = {
+      id: newUser.id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      phoneNumber: newUser.phoneNumber,
+      userType: newUser.userType,
+      isEmailVerified: newUser.isEmailVerified,
+      accountStatus: newUser.accountStatus,
+      uid: newUser.uid,
+      fullName: newUser.fullName,
+      location: newUser.location,
+      username: newUser.username,
+      profileImageUrl: newUser.profileImageUrl,
+      stripeCustomerId: newUser.stripeCustomerId,
+      userStatus: newUser.userStatus,
+      isSubscribed: newUser.isSubscribed,
+      createdAt: newUser.createdAt,
+      updatedAt: newUser.updatedAt,
+    };
+
     sendEmail(userData.email, 'otpTemplate', otpData);
-    return { response:"user created successfully!", statusCode: 200, error: false };
+    return { statusCode: 200, error: false, response: userResponse };
   } catch (error) {
     if (error instanceof Sequelize.UniqueConstraintError) {
       console.error("Error: email already exists:", error);
@@ -114,6 +137,8 @@ async function userCreate(userData) {
     }
   }
 }
+
+
 
 async function changePasswordService(email, old_password, new_password) {
   const hashedNewPassword = await bcrypt.hash(new_password, saltRounds);

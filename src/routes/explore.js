@@ -15,6 +15,8 @@ router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
 router.post('/auth/add',exploreController.exploreData);
 router.delete('/auth/delete-explore/:id',exploreController.deleteExplore);
 router.post('/auth/update/:id',exploreController.updateExplore);
+
+
 router.post('/auth/update-tag/:id',exploreController.updateTag);
 router.post('/auth/add-new-tag/:id',exploreController.addTags);
 router.delete('/auth/remove-tag/:id',exploreController.removeTag);
