@@ -6,3 +6,5 @@ frontend/node_modules
 build
 .deployment
 .vscode
+deploy.sh
+deploy.zip

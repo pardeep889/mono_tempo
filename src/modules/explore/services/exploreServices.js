@@ -235,29 +235,34 @@ const addNewTagService = async (exploreId, uid, newTag) => {
     return { response: "An error occurred while adding the new tag.", statusCode: 500, error: true };
   }
 };
-
-const removeTagService = async (exploreId, userId, oldTag) => {
+const removeTagService = async (exploreId, uid, oldTag) => {
   try {
-    const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId, userId: userId },
+    const explore = await db.Explore.findOne({
+      where: { id: exploreId, uid: uid },
     });
-    let prevArray = dbResponse.dataValues.tags;
-    console.log("prevArr", prevArray);
-    const index = prevArray[0].indexOf(oldTag);
-    console.log("index", index);
-    let updatedArray = [];
+
+    if (!explore) {
+      return { response: "Explore not found", statusCode: 400, error: true };
+    }
+
+    let tags = explore.tags || [];
+
+    const index = tags.indexOf(oldTag);
     if (index !== -1) {
-      updatedArray = prevArray[0]
-        .slice(0, index)
-        .concat(prevArray[0].slice(index + 1));
-      console.log("updated Array", updatedArray);
+      tags.splice(index, 1); // Remove the tag from array
+
       await db.Explore.update(
-        {
-          tags: [updatedArray],
-        },
+        { tags: tags },
         { where: { id: exploreId } }
       );
-      console.log(`Array after removing ${oldTag}: ${updatedArray}`);
+
+      console.log(`Tag '${oldTag}' removed successfully. Updated tags:`, tags);
+
+      return {
+        response: oldTag,
+        statusCode: 200,
+        error: false,
+      };
     } else {
       return {
         response: `${oldTag} not found in Explore tags.`,
@@ -265,14 +270,9 @@ const removeTagService = async (exploreId, userId, oldTag) => {
         error: true,
       };
     }
-
-    return {
-      response: "Tag removed successfully",
-      statusCode: 200,
-      error: false,
-    };
   } catch (error) {
-    return { response: error, statusCode: 400, error: true };
+    console.error("Error removing tag:", error);
+    return { response: "An error occurred while removing the tag.", statusCode: 500, error: true };
   }
 };
 
@@ -280,7 +280,7 @@ const updateTagService = async (uid, exploreId, tagToFind, newTag) => {
   console.log(uid, exploreId, tagToFind, newTag);
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId,uid: uid },
+      where: { id: exploreId , uid: uid },
     });
 
     if (dbResponse === null) {

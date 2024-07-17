@@ -169,24 +169,25 @@ const addTags = async (req, res) => {
 };
 
 const removeTag = async (req, res) => {
-  const userId = req.user.userId;
+  const uid = req.user.uid;
   const exploreId = req.params.id;
   const { oldTag } = req.body;
   try {
-    const { response, statusCode, error } = await removeTagService(exploreId, userId, oldTag);
+    const { response, statusCode, error } = await removeTagService(exploreId, uid, oldTag);
     if (error) {
       return res.status(statusCode).json({
         success: false,
-        message: "Error",
-        data: response
+        message: response,
+        data: null
       });
     }
     return res.status(statusCode).json({
       success: true,
-      message: "Request successful",
+      message: "Tag removed successfully",
       data: response
     });
   } catch (error) {
+    console.log("error: ", error)
     return res.status(400).json({
       success: false,
       message: "Error",
