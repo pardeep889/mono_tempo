@@ -31,7 +31,7 @@ const logingUser = async (req, res) => {
     console.error(err);
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: "Internal Server Error",
       data: null
     });
   }
