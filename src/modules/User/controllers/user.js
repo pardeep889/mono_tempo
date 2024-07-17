@@ -18,7 +18,7 @@ const logingUser = async (req, res) => {
     if (error) {
       return res.status(statusCode).json({
         success: false,
-        message: "Error",
+        message: response,
         data: null
       });
     }
