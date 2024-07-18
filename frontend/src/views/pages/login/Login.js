@@ -39,13 +39,13 @@ const Login = () => {
       email: username,
       password: password,
     });
-    const user = resp.message;
+    const user = resp.data.user;
     if (
       signIn({
         auth: {
-          token: `${user.token}`,
+          token: `${resp.data.token}`,
         },
-        userState: { token: `${user.token}`, ...user.user },
+        userState: { token: `${resp.data.token}`, ...user },
       })
     ) {
       navigate('/dashboard')
