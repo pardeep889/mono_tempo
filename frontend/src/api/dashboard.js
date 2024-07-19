@@ -33,3 +33,21 @@ export const fetchUsers = async (start, pageSize, role) => {
     throw error;
   }
 };
+
+export const fetchExplores = async (page, pageSize) => {
+  const instance = axiosInstance()
+
+  if (!instance) {
+    throw new Error('Token not available')
+  }
+
+  try {
+    const response = await instance.get(`${BACKEND_URL}/explore/fetch-explores`, {
+      params: { page, pSize: pageSize }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching explores:', error)
+    throw error
+  }
+}

@@ -37,10 +37,10 @@ const exploreData = async (req, res) => {
 };
 
 const deleteExplore = async (req, res) => {
-  const userId = req.user.userId;
+  const uid = req.user.uid;
   const exploreId = req.params.id;
   try {
-    const { response, statusCode, error } = await deleteExploreService(exploreId, userId);
+    const { response, statusCode, error } = await deleteExploreService(exploreId, uid);
     if (error) {
       return res.status(statusCode).json({
         success: false,

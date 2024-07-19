@@ -13,10 +13,10 @@ const exploreDataService = async (data) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const deleteExploreService = async (exploreId, userId) => {
+const deleteExploreService = async (exploreId, uid) => {
   try {
     const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId, userId: userId },
+      where: { id: exploreId, uid: uid },
     });
     if (dbResponse == null) {
       return {
