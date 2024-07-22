@@ -1,11 +1,13 @@
 import { BACKEND_URL, axiosInstance } from "./config";
 
-export const fetchUserCounts = async () => {
-  const instance = axiosInstance();
+const instance = axiosInstance()
 
   if (!instance) {
-    throw new Error('Token not available');
+    throw new Error('Token not available')
   }
+
+export const fetchUserCounts = async () => {
+
 
   try {
     const response = await instance.get(`${BACKEND_URL}/admin/dashboard-count`); // Replace with your API endpoint
@@ -17,11 +19,7 @@ export const fetchUserCounts = async () => {
 };
 
 export const fetchUsers = async (start, pageSize, role) => {
-  const instance = axiosInstance();
 
-  if (!instance) {
-    throw new Error('Token not available');
-  }
 
   try {
     const response = await instance.get(`${BACKEND_URL}/admin/fetch-users`, {
@@ -35,11 +33,7 @@ export const fetchUsers = async (start, pageSize, role) => {
 };
 
 export const fetchExplores = async (page, pageSize) => {
-  const instance = axiosInstance()
-
-  if (!instance) {
-    throw new Error('Token not available')
-  }
+  
 
   try {
     const response = await instance.get(`${BACKEND_URL}/explore/fetch-explores`, {
@@ -51,3 +45,17 @@ export const fetchExplores = async (page, pageSize) => {
     throw error
   }
 }
+
+
+export const promoteExploreAPI = async (id, promote) => {
+  try {
+    const response = await instance.post(`${BACKEND_URL}/admin/promote-explore`, {
+      id: id,
+      promote: promote
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error promoting explore:', error);
+    throw error;
+  }
+};

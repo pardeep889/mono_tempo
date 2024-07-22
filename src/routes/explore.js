@@ -5,13 +5,15 @@ const exploreController = require('../modules/explore/controllers/explore');
 // ************** public routes *****************  //
 router.get('/get-explore-by-id/:id',exploreController.getExploreById);
 
+
+
+// ************** Protected routes *****************  //
 router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
 
 
-
-
-
 // ************** private routes *****************  //
+router.post('/update-status/:id',authenticateJWT, exploreController.updateExploreStatus);
+
 router.post('/auth/add',exploreController.exploreData);
 router.delete('/auth/delete-explore/:id',exploreController.deleteExplore);
 router.post('/auth/update/:id',exploreController.updateExplore);

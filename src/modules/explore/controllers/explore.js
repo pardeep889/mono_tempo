@@ -9,6 +9,7 @@ const {
   addNewTagService,
   removeTagService,
   updateTagService,
+  updateExploreStatusService,
 } = require("../services/exploreServices");
 
 const exploreData = async (req, res) => {
@@ -223,6 +224,33 @@ const updateTag = async (req, res) => {
   }
 };
 
+
+const updateExploreStatus = async (req, res) => {
+  const exploreId = req.params.id;
+  const uid = req.user.uid;
+  const { status } = req.body;
+  try {
+    const { response, statusCode, error } = await updateExploreStatusService(exploreId, status, uid );
+    if (error) {
+      return res.status(statusCode).json({
+        success: false,
+        message: response,
+        data: null
+      });
+    }
+    return res.status(statusCode).json({
+      success: true,
+      message: response,
+      data: null
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: response,
+      data: null
+    });
+  }
+};
 module.exports = {
   exploreData: exploreData,
   deleteExplore: deleteExplore,
@@ -232,4 +260,5 @@ module.exports = {
   addTags: addTags,
   removeTag: removeTag,
   updateTag: updateTag,
+  updateExploreStatus: updateExploreStatus
 };

@@ -312,6 +312,36 @@ const updateTagService = async (uid, exploreId, tagToFind, newTag) => {
   }
 };
 
+const updateExploreStatusService = async (exploreId, status, uid) => {
+  try {
+    const dbResponse = await db.Explore.findOne({
+      where: { id: exploreId},
+    });
+
+    if (dbResponse === null) {
+      return {
+        error: true,
+        response: "Explore not found or user does not have permission to update status",
+        statusCode: 400,
+      };
+    }
+
+    await db.Explore.update(
+      { status: status },
+      { where: { id: exploreId} }
+    );
+
+    return {
+      response: "Explore status updated successfully",
+      statusCode: 200,
+      error: false,
+    };
+  } catch (error) {
+    console.error("Error updating explore status:", error);
+    return { response: "An error occurred while updating the explore status.", statusCode: 500, error: true };
+  }
+};
+
 
 module.exports = {
   exploreDataService: exploreDataService,
@@ -322,4 +352,5 @@ module.exports = {
   addNewTagService: addNewTagService,
   removeTagService: removeTagService,
   updateTagService: updateTagService,
+  updateExploreStatusService: updateExploreStatusService,
 };
