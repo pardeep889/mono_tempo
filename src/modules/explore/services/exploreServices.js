@@ -58,8 +58,8 @@ const getExploreByIdService = async (exploreId) => {
     return { response: error, statusCode: 400, error: true };
   }
 };
-const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted) => {
-  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted);
+const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId) => {
+  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);
 
   let categoryCondition = "";
   let locationCondition = "";
@@ -93,7 +93,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       `SELECT 
         e.*,
         e.id as exploreId,
-        c.*,
+        
         json_build_object(
           'id', c."id",
           'uid', c."uid",
@@ -134,6 +134,18 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
             )
           )
         ) AS "units",
+        (SELECT COUNT(*) FROM "ExploreLikes" el WHERE el."exploreId" = e."id") AS "likeCount",
+        (SELECT COUNT(*) > 0 FROM "ExploreLikes" el WHERE el."exploreId" = e."id" AND el."userId" = :userId) AS "isLiked",
+        (SELECT json_agg(json_build_object(
+          'userId', ul."userId",
+          'uid', u."uid",
+          'profileImageUrl', u."profileImageUrl",
+          'fullName', u."fullName",
+          'username', u."username"
+        ))
+        FROM "ExploreLikes" ul
+        JOIN "Users" u ON ul."userId" = u."id"
+        WHERE ul."exploreId" = e."id") AS "likes",
         CASE
           WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
           ELSE false
@@ -147,7 +159,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       GROUP BY e."id", tv."id", c."id"
       LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted },
+        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted, userId },
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
@@ -342,6 +354,52 @@ const updateExploreStatusService = async (exploreId, status, uid) => {
   }
 };
 
+async function likeExploreService(userId, exploreId) {
+  try {
+    const explore = await db.Explore.findByPk(exploreId);
+    if (!explore) {
+      return { message: "Explore entry not found", statusCode: 404, success: false, data: null };
+    }
+
+    const [like, created] = await db.ExploreLike.findOrCreate({
+      where: { userId: userId, exploreId: exploreId }
+    });
+
+    if (!created) {
+      return { message: "You have already liked this explore entry", statusCode: 400, success: false, data: null };
+    }
+
+    return { message: "Successfully liked the explore entry", statusCode: 200, success: true, data: null };
+  } catch (error) {
+    console.error("Error liking explore entry:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function unlikeExploreService(userId, exploreId) {
+  try {
+    const explore = await db.Explore.findByPk(exploreId);
+    if (!explore) {
+      return { message: "Explore entry not found", statusCode: 404, success: false, data: null };
+    }
+
+    const like = await db.ExploreLike.findOne({
+      where: { userId: userId, exploreId: exploreId }
+    });
+
+    if (!like) {
+      return { message: "You have not liked this explore entry", statusCode: 400, success: false, data: null };
+    }
+
+    await like.destroy();
+
+    return { message: "Successfully unliked the explore entry", statusCode: 200, success: true, data: null };
+  } catch (error) {
+    console.error("Error unliking explore entry:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
 
 module.exports = {
   exploreDataService: exploreDataService,
@@ -353,4 +411,6 @@ module.exports = {
   removeTagService: removeTagService,
   updateTagService: updateTagService,
   updateExploreStatusService: updateExploreStatusService,
+  likeExploreService: likeExploreService,
+  unlikeExploreService: unlikeExploreService
 };

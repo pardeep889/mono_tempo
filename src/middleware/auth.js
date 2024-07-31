@@ -1,11 +1,12 @@
 // src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const secretKey = "TEST_SECRET_KEY";
+const refreshTokenSecretKey = "TEST_REFRESH_SECRET_KEY";
 
 
 exports.authenticateJWT = (req, res, next) => {
   const authHeader = req.header('Authorization');
-
+  
   if (!authHeader) {
     return res.status(401).json({
       success: false,
@@ -19,13 +20,14 @@ exports.authenticateJWT = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ 
+    console.log(error)
+    res.status(401).json({
       success: false,
       message: "Provided Token is not Valid/Expired",
-      data: null});
+      data: null
+    });
   }
 };
-
 
 exports.authorizeRoles = (...roles) => {
   return (req, res, next) => {
@@ -34,4 +36,29 @@ exports.authorizeRoles = (...roles) => {
     }
     next();
   };
+};
+
+exports.verifyRefreshToken = (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Access Denied | Refresh Token not Provided",
+      data: null
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, refreshTokenSecretKey);
+    req.user = decoded;
+    req.jti = decoded.jti;
+    next();
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: "Provided Refresh Token is not Valid/Expired",
+      data: null
+    });
+  }
 };

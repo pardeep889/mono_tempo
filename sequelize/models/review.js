@@ -4,7 +4,8 @@ const { Model, DataTypes } = require('sequelize');
 module.exports = (sequelize) => {
   class Review extends Model {
     static associate(models) {
-      
+      this.hasMany(models.ReviewsReplies, { foreignKey: 'reviewId', as: 'replies' });
+      this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
     }
   }
   Review.init({
@@ -20,6 +21,10 @@ module.exports = (sequelize) => {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: 'Users', // Name of the target model
+        key: 'id', // Key in the target model
+      },
     },
     text: {
       type: DataTypes.TEXT,
@@ -27,17 +32,16 @@ module.exports = (sequelize) => {
     },
     uid: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
     exploreId: {
       type: DataTypes.STRING,
-      allowNull: false
-    }
+      allowNull: false,
+    },
   },
   {
     sequelize,
     modelName: "Review",
-  }
-);
-return Review;
+  });
+  return Review;
 };

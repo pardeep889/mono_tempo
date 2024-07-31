@@ -9,7 +9,8 @@ router.get('/get-explore-by-id/:id',exploreController.getExploreById);
 
 // ************** Protected routes *****************  //
 router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
-
+router.post('/:id/like', authenticateJWT, exploreController.likeExplore);
+router.post('/:id/unlike', authenticateJWT, exploreController.unlikeExplore);
 
 // ************** private routes *****************  //
 router.post('/update-status/:id',authenticateJWT, exploreController.updateExploreStatus);

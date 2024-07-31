@@ -3,8 +3,29 @@ const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
-    static associate(models) {}
+    static associate(models) {
+      this.belongsToMany(models.User, {
+        through: models.Follow,
+        as: 'followers',
+        foreignKey: 'followedId',
+        otherKey: 'followerId',
+      });
+
+      this.belongsToMany(models.User, {
+        through: models.Follow,
+        as: 'following',
+        foreignKey: 'followerId',
+        otherKey: 'followedId',
+      });
+
+      this.hasMany(models.ExploreLike, { foreignKey: 'userId', as: 'likes' });
+
+      this.hasMany(models.Review, { foreignKey: 'userId', as: 'reviews' });
+
+      this.hasMany(models.ReviewsReplies, { foreignKey: 'userId', as: 'reviewReplies' });
+    }
   }
+
   User.init(
     {
       id: {
@@ -18,12 +39,12 @@ module.exports = (sequelize, DataTypes) => {
       },
       accountStatus: {
         type: DataTypes.ENUM,
-        values: Object.values(["active", "inactive","deleted", "pending"]),
+        values: ["active", "inactive", "deleted", "pending"],
         defaultValue: "active",
       },
       role: {
         type: DataTypes.ENUM,
-        values: Object.values(["USER", "ADMIN","MOD"]),
+        values: ["USER", "ADMIN", "MOD"],
         defaultValue: "USER",
       },
       fullName: {
@@ -45,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
       email: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true
+        unique: true,
       },
       username: {
         type: DataTypes.STRING(255),
@@ -59,7 +80,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
-      forgotLink:{
+      forgotLink: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -82,7 +103,7 @@ module.exports = (sequelize, DataTypes) => {
       isEmailVerified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-        allowNull: true
+        allowNull: true,
       },
       createdAt: {
         type: DataTypes.TEXT,
@@ -91,7 +112,7 @@ module.exports = (sequelize, DataTypes) => {
       updatedAt: {
         type: DataTypes.TEXT,
         allowNull: true,
-      }
+      },
     },
     {
       sequelize,
@@ -99,5 +120,6 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: false, // Disable automatic timestamps
     }
   );
+
   return User;
 };

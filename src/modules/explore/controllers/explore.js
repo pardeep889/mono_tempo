@@ -10,6 +10,8 @@ const {
   removeTagService,
   updateTagService,
   updateExploreStatusService,
+  likeExploreService,
+  unlikeExploreService,
 } = require("../services/exploreServices");
 
 const exploreData = async (req, res) => {
@@ -91,10 +93,10 @@ const getExploreById = async (req, res) => {
 const getExplore = async (req, res) => {
   let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
-  const { uid } = req.user;
+  const { uid, userId } = req.user;
   const {locationFilterType, locationFilterName, category, latitude, longitude, promoted} = req.query;
   try {
-    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted);
+    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);
     if (error) {
       return res.status(statusCode).json({
         success: false,
@@ -251,6 +253,31 @@ const updateExploreStatus = async (req, res) => {
     });
   }
 };
+
+const likeExplore = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
+
+  const { message, success, statusCode, data } = await likeExploreService(userId, id);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const unlikeExplore = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.userId;
+
+  const { message, success, statusCode, data } = await unlikeExploreService(userId, id);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
 module.exports = {
   exploreData: exploreData,
   deleteExplore: deleteExplore,
@@ -260,5 +287,7 @@ module.exports = {
   addTags: addTags,
   removeTag: removeTag,
   updateTag: updateTag,
-  updateExploreStatus: updateExploreStatus
+  updateExploreStatus: updateExploreStatus,
+  likeExplore,
+  unlikeExplore
 };

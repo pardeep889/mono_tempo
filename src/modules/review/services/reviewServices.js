@@ -1,21 +1,12 @@
 const { Review } = require("../../../../sequelize/models");
-const db = require("../../../../sequelize/models"); 
-
-const { Explore } = require("../../../../sequelize/models");
-
+const db = require("../../../../sequelize/models");
 
 const reviewServices = async (userId, uid, data) => {
   try {
-    const explore = await db.Explore.findOne({
-      where: { id: data.exploreId }
-    });
+    const explore = await db.Explore.findOne({ where: { id: data.exploreId } });
 
     if (!explore) {
-      return {
-        response: "Invalid exploreId",
-        statusCode: 400, 
-        error: true,
-      };
+      return { response: "Invalid exploreId", statusCode: 400, success: false };
     }
 
     const dbResponse = await Review.create({
@@ -25,186 +16,154 @@ const reviewServices = async (userId, uid, data) => {
       uid: uid,
       exploreId: data.exploreId,
     });
-    
+
     if (explore) {
-      console.log("increment", explore.totalReviewsCount)
-      explore.totalReviewsCount =Number(explore.totalReviewsCount || 0) + 1;
-      await explore.save(); 
+      explore.totalReviewsCount = Number(explore.totalReviewsCount || 0) + 1;
+      await explore.save();
     }
-    return {
-      response: dbResponse.dataValues,
-      statusCode: 200,
-      error: false,
-    };
+
+    return { response: dbResponse.dataValues, statusCode: 200, success: true };
   } catch (error) {
     console.log(error);
-    return {
-      response: error,
-      statusCode: 401,
-      error: true,
-    };
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
 
 const fetchAllReviewService = async (start, pageSize, exploreId) => {
   try {
-    const dbResponse = await db.Review.findAll({
-      where: {
-        exploreId: exploreId
-      },
+    const dbResponse = await db.Review.findAndCountAll({
+      where: { exploreId: exploreId },
       offset: start,
       limit: pageSize,
+      include: [
+        {
+          model: db.User,
+          as: 'user',
+          attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+        },
+        {
+          model: db.ReviewsReplies,
+          as: 'replies',
+          attributes: ['id', 'userId', 'uid', 'reviewId', 'text', 'isCreater'],
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+            },
+          ],
+        },
+      ],
     });
-    return { response: dbResponse, statusCode: 200, error: false };
+
+    // Count the total number of reviews for the specified exploreId
+    const reviewsCount = await db.Review.count({
+      where: { exploreId: exploreId }
+    });
+
+    // Count the total number of replies for the specified exploreId
+    const repliesCount = await db.ReviewsReplies.count({
+      include: [{
+        model: db.Review,
+        as: 'review',
+        where: { exploreId: exploreId }
+      }]
+    });
+
+    return { response: { reviews: dbResponse.rows, reviewsCount, repliesCount }, statusCode: 200, success: true };
   } catch (error) {
-    return { response: error, statusCode: 400, error: true };
+    console.log(error);
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
+
+
 
 
 const fetchReviewByIdServices = async (reviewId) => {
   try {
-    const Review = db.Review; 
-    const review = await Review.findByPk(reviewId);
+    const review = await db.Review.findByPk(reviewId);
     if (!review) {
-      return {
-        response: "Review not found",
-        statusCode: 400,
-        error: true,
-      };
+      return { response: "Review not found", statusCode: 404, success: false };
     }
-    return {
-      response: review,
-      statusCode: 200,
-      error: false,
-    };
+    return { response: review, statusCode: 200, success: true };
   } catch (error) {
     console.log(error);
-    return {
-      response: error,
-      statusCode: 400,
-      error: true,
-    };
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
 
-const deleteReviewByIdService = async (id,userId) => {
+const deleteReviewByIdService = async (id, userId) => {
   try {
-    const result = await db.Review.destroy({where: {id,userId},});
+    const result = await db.Review.destroy({ where: { id, userId } });
     if (result === 0) {
-      return {
-        response: "Review not found or could not be deleted",
-        statusCode: 400,
-        error: true,
-      };
+      return { response: "Review not found or could not be deleted", statusCode: 404, success: false };
     }
-    return {
-      response: "Review deleted successfully",
-      statusCode: 200,
-      error: false,
-    };
+    return { response: "Review deleted successfully", statusCode: 200, success: true };
   } catch (error) {
-    return {
-      response: error,
-      statusCode: 400,
-      error: true,
-    };
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
 
-const updateReviewByIdService = async (userId,reviewId, updatedReviewData) => {
+const updateReviewByIdService = async (userId, reviewId, updatedReviewData) => {
   try {
     const result = await db.Review.update(updatedReviewData, {
-      where: {
-        id: reviewId,userId:userId
-      },
+      where: { id: reviewId, userId: userId },
     });
     if (result[0] === 0) {
-      return {
-        response: 'Review not found',
-        statusCode: 400,
-        error: true,
-      };
+      return { response: "Review not found", statusCode: 404, success: false };
     }
-    return {
-      response: 'Review updated successfully',
-      statusCode: 200,
-      error: false,
-    };
+    return { response: "Review updated successfully", statusCode: 200, success: true };
   } catch (error) {
-    console.log(error)
-    return {
-      response: error,
-      statusCode: 400,
-      error: true,
-    };
+    console.log(error);
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
-const reviewRepliesService =async(userId,uid, reviewId)=>{
-  console.log("user",userId,reviewId);
-  const isReviewExist = await db.Review.findOne({
-    where:{id:reviewId}
-  });
-  if(isReviewExist === null){
-    return{response:"Review not found !",statusCode:400,error:true}
-  }
+
+const reviewRepliesService = async (userId, uid, exploreId, reviewId, review, isCreater) => {
+  console.log(userId, exploreId, reviewId, review)
   try {
-    const exploreDbResponse = await db.Explore.findOne({
-      where:{uid:uid}
-    })
-    if(exploreDbResponse !== null){
-      const resp = await db.ReviewsReplies.create({
+    const isReviewExist = await db.Review.findOne({ where: { id: reviewId } });
+    if (!isReviewExist) {
+      return { message: "Review not found", statusCode: 404, success: false , data: null};
+    }
+    const exploreDbResponse = await db.Explore.findOne({ where: { id: exploreId } });
+    if (exploreDbResponse !== null) {
+      await db.ReviewsReplies.create({
         userId: userId,
-        reviewId:reviewId,
-        text:"This is my review reply",
-        isCreater:true
-      })
-      console.log("exploreResp",resp.dataValues)
-      return{response:"Reply post Successfully",statusCode:200,error:false}
+        uid: uid,
+        reviewId: reviewId,
+        text: review,
+        isCreater: isCreater,
+      });
+      return { message: "Reply posted successfully", statusCode: 200, success: true , data: null};
     }
-    // const buyerDbResponse = await db.Buyer.findOne({
-    //   where:{userId:4}
-    // })
-    // if(buyerDbResponse !== null){
-      const resp = await db.ReviewsReplies.create({
-            userId: userId,
-            uid: uid,
-            reviewId:reviewId,
-            text:"This is my review reply",
-            isCreater:false
-          })
-          console.log("buyerResp",resp.dataValues);
-          return{response:"Reply post Successfully",statusCode:200,error:false}
-    // }
-    // return{response:"User nor buyer nor creator",statusCode:400,error:true}
+    return { message: "explore not found", statusCode: 404, success: false, data: null };
   } catch (error) {
-    return{response:"error",statusCode:400,error:true}
+    console.error(error);
+    return { message: "Internal server error", statusCode: 500, success: false , data: null};
   }
 };
-const updateReviewRepliesService=async(userId,reviewId,updatedReply)=>{
-  const reviewResponse = await db.ReviewsReplies.findOne({
-    where:{id:reviewId,userId:userId}
-  });
-  if(reviewResponse === null){
-    return {response:"Reply associated with this reply is not found!",statusCode:400,error:true}
+
+const updateReviewRepliesService = async (userId, reviewId, updatedReply) => {
+  const reviewResponse = await db.ReviewsReplies.findOne({ where: { id: reviewId, userId: userId } });
+  if (!reviewResponse) {
+    return { response: "Reply associated with this review is not found", statusCode: 404, success: false };
   }
   try {
-    await db.ReviewsReplies.update({
-       text:updatedReply},
-      {where:{userId:userId,id:reviewId}
-    });
-    return{response:"Review Reply updated Successfully",statusCode:200,error:false}
+    await db.ReviewsReplies.update({ text: updatedReply }, { where: { userId: userId, id: reviewId } });
+    return { response: "Review reply updated successfully", statusCode: 200, success: true };
   } catch (error) {
-  return {response:"error",statusCode:400,error:true}
+    return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
 
 module.exports = {
-  reviewServices: reviewServices,
-  fetchAllReviewService: fetchAllReviewService,
-  fetchReviewByIdServices: fetchReviewByIdServices,
-  deleteReviewByIdService:deleteReviewByIdService,
-  updateReviewByIdService: updateReviewByIdService,
-  reviewRepliesService:reviewRepliesService,
-  updateReviewRepliesService:updateReviewRepliesService
+  reviewServices,
+  fetchAllReviewService,
+  fetchReviewByIdServices,
+  deleteReviewByIdService,
+  updateReviewByIdService,
+  reviewRepliesService,
+  updateReviewRepliesService,
 };

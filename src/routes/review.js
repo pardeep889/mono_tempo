@@ -13,7 +13,7 @@ router.delete('/delete/:id',authenticateJWT , reviewController.deleteReview);
 router.put('/update/:reviewId',authenticateJWT, reviewController.updateReview);
 
 
-router.post('/review-reply/:id',authenticateJWT, reviewController.reviewReply);
+router.post('/review-reply',authenticateJWT, reviewController.reviewReply);
 router.post('/update-review-reply/:id',authenticateJWT, reviewController.updateReviewReply)
 
 

@@ -6,7 +6,9 @@ const {
   forgotPasswordService,
   confirmLinkService,
   recoverPasswordService,
-  getUserById,
+  getUserByIdService,
+  followUserService,
+  unfollowUserService,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -14,12 +16,12 @@ const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
 const logingUser = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const { response, statusCode, error } = await userLogin(email, password);
+    const { response, statusCode, error , data} = await userLogin(email, password);
     if (error) {
       return res.status(statusCode).json({
         success: false,
         message: response,
-        data: null
+        data
       });
     }
     return res.status(statusCode).json({
@@ -225,28 +227,69 @@ const recoverPassword = async (req, res) => {
 };
 
 const fetchUserByIdController = async (req, res) => {
-  const userId = req.params.id;
-  try {
-    const { success, statusCode, error, response } = await getUserById(userId);
-    if (error) {
-      return res.status(statusCode).json({
-        success: false,
-        message: "Error",
-        data: null
-      });
-    }
-    return res.status(statusCode).json({
-      success: true,
-      message: "Request successful",
-      data: response
-    });
-  } catch (error) {
-    return res.status(500).json({
+  const { id } = req.params;
+  const { start = 0, pageSize = 10 } = req.query;
+  const { message, success, statusCode, data } = await getUserByIdService(id, parseInt(start), parseInt(pageSize));
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const followUser = async (req, res) => {
+  const { userId } = req.body;
+  const followerId = req.user.userId;
+
+  if (userId === followerId) {
+    return res.status(400).json({
       success: false,
-      message: "Error",
+      message: "You cannot follow yourself",
       data: null
     });
   }
+  if(!userId || followerId == null) {
+    return res.status(400).json({
+      message: "userId to follow cannot be null",
+      success: false,
+      data: null
+    })
+  }
+  
+  const { message, success, statusCode, data } = await followUserService(followerId, userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+
+};
+
+const unfollowUser = async (req, res) => {
+  const { userId } = req.body;
+  const followerId = req.user.userId;
+
+  if (userId === followerId) {
+    return res.status(400).json({
+      success: false,
+      message: "You cannot unfollow yourself",
+      data: null
+    });
+  }
+  if (!userId || followerId == null) {
+    return res.status(400).json({
+      message: "userId to unfollow cannot be null",
+      success: false,
+      data: null
+    });
+  }
+
+  const { message, success, statusCode, data } = await unfollowUserService(followerId, userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
 };
 
 module.exports = {
@@ -258,4 +301,6 @@ module.exports = {
   confirmLink,
   recoverPassword,
   fetchUserByIdController,
+  followUser,
+  unfollowUser
 };

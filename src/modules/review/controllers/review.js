@@ -13,29 +13,18 @@ const createReview = async (req, res) => {
   const loggedInUser = req.user;
   const userId = loggedInUser.userId;
   try {
-    const { response, statusCode, error } = await reviewServices(
-      userId,
-      loggedInUser.uid,
-      req.body
-    );
+    const { response, statusCode, success } = await reviewServices(userId, loggedInUser.uid, req.body);
 
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response.errors ? response.errors[0].message : "An error occurred",
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
+    return res.status(statusCode || 500).json({
       message: response,
-      error: false,
-      success: true
+      success,
+      data: success ? response : null,
     });
   } catch (error) {
     return res.status(500).json({
       message: "An error occurred",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
@@ -45,8 +34,8 @@ const fetchAllReview = async (req, res) => {
   if (!exploreId) {
     return res.status(400).json({
       message: "Please provide explore id",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 
@@ -54,28 +43,18 @@ const fetchAllReview = async (req, res) => {
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
 
   try {
-    const { response, statusCode, error } = await fetchAllReviewService(
-      start,
-      pageSize,
-      exploreId
-    );
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: "Something went wrong",
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
-      message: response,
-      error: false,
-      success: true
+    const { response, statusCode, success } = await fetchAllReviewService(start, pageSize, exploreId);
+
+    return res.status(statusCode || 500).json({
+      message: success ? "Reviews fetched successfully" : "Something went wrong",
+      success,
+      data: success ? response : null,
     });
   } catch (error) {
     return res.status(500).json({
       message: "Something went wrong",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
@@ -83,25 +62,19 @@ const fetchAllReview = async (req, res) => {
 const fetchReviewById = async (req, res) => {
   const reviewId = req.params.reviewId;
   try {
-    const { response, statusCode, error } = await fetchReviewByIdServices(reviewId);
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response,
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
-      message: response,
-      error: false,
-      success: true
+    const { response, statusCode, success } = await fetchReviewByIdServices(reviewId);
+
+    return res.status(statusCode || 500).json({
+      message: "Reviews fetched successfully",
+      success,
+      data: success ? response : null,
     });
   } catch (error) {
     console.log("Error occurred, please check", error);
     return res.status(500).json({
       message: "An error occurred",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
@@ -111,24 +84,18 @@ const deleteReview = async (req, res) => {
   const userId = loggedInUser.userId;
   const id = req.params.id;
   try {
-    const { response, statusCode, error } = await deleteReviewByIdService(id, userId);
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response,
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
+    const { response, statusCode, success } = await deleteReviewByIdService(id, userId);
+
+    return res.status(statusCode || 500).json({
       message: response,
-      error: false,
-      success: true
+      success,
+      data: null,
     });
   } catch (error) {
     return res.status(500).json({
       message: "An error occurred",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
@@ -139,61 +106,33 @@ const updateReview = async (req, res) => {
     const userId = loggedInUser.userId;
     const reviewId = req.params.reviewId;
     const updatedReviewData = req.body;
-    const { response, statusCode, error } = await updateReviewByIdService(
-      userId,
-      reviewId,
-      updatedReviewData
-    );
+    const { response, statusCode, success } = await updateReviewByIdService(userId, reviewId, updatedReviewData);
 
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response,
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
+    return res.status(statusCode || 500).json({
       message: response,
-      error: false,
-      success: true
+      success,
+      data: null,
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       message: "Something went wrong",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
 
 const reviewReply = async (req, res) => {
-  const loggedInUser = req.user;
-  const userId = loggedInUser.userId;
-  const uid = loggedInUser.uid;
-
-  const reviewId = req.params.id;
-  try {
-    const { response, statusCode, error } = await reviewRepliesService(userId, uid, reviewId);
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response,
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
-      message: response,
-      error: false,
-      success: true
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "An error occurred",
-      error: true,
-      success: false
-    });
-  }
+  const userId = req.user.userId;
+  const uid = req.user.uid;
+  const {review, exploreId, reviewId, isCreater}  = req.body;
+  const { message, statusCode, success, data } = await reviewRepliesService(userId, uid, exploreId, reviewId, review, isCreater);
+  return res.status(statusCode).json({
+    message: message,
+    success,
+    data: data,
+  });
 };
 
 const updateReviewReply = async (req, res) => {
@@ -202,28 +141,18 @@ const updateReviewReply = async (req, res) => {
   const reviewId = req.params.id;
   const updatedReply = req.body.text;
   try {
-    const { response, statusCode, error } = await updateReviewRepliesService(
-      userId,
-      reviewId,
-      updatedReply
-    );
-    if (error) {
-      return res.status(statusCode || 500).json({
-        message: response,
-        error: true,
-        success: false
-      });
-    }
-    return res.status(statusCode || 200).json({
+    const { response, statusCode, success } = await updateReviewRepliesService(userId, reviewId, updatedReply);
+
+    return res.status(statusCode || 500).json({
       message: response,
-      error: false,
-      success: true
+      success,
+      data: null,
     });
   } catch (error) {
     return res.status(500).json({
       message: "An error occurred",
-      error: true,
-      success: false
+      success: false,
+      data: null,
     });
   }
 };
@@ -235,5 +164,5 @@ module.exports = {
   deleteReview,
   updateReview,
   reviewReply,
-  updateReviewReply
+  updateReviewReply,
 };
