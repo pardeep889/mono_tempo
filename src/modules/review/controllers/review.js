@@ -6,6 +6,8 @@ const {
   fetchAllReviewService,
   reviewRepliesService,
   updateReviewRepliesService,
+  likeReviewService,
+  dislikeReviewService,
 } = require("../services/reviewServices");
 const db = require("../../../../sequelize/models/review");
 
@@ -157,6 +159,31 @@ const updateReviewReply = async (req, res) => {
   }
 };
 
+const likeReview = async (req, res) => {
+  const userId = req.user.userId;
+  const { reviewId } = req.params;
+
+  const { message, statusCode, success, data } = await likeReviewService(userId, reviewId);
+  return res.status(statusCode).json({
+    message: message,
+    success,
+    data: data,
+  });
+};
+
+const dislikeReview = async (req, res) => {
+  const userId = req.user.userId;
+  const { reviewId } = req.params;
+
+  const { message, statusCode, success, data } = await dislikeReviewService(userId, reviewId);
+  return res.status(statusCode).json({
+    message: message,
+    success,
+    data: data,
+  });
+};
+
+
 module.exports = {
   createReview,
   fetchAllReview,
@@ -165,4 +192,6 @@ module.exports = {
   updateReview,
   reviewReply,
   updateReviewReply,
+  likeReview,
+  dislikeReview
 };

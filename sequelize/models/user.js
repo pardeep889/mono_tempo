@@ -23,6 +23,8 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.Review, { foreignKey: 'userId', as: 'reviews' });
 
       this.hasMany(models.ReviewsReplies, { foreignKey: 'userId', as: 'reviewReplies' });
+
+      this.hasMany(models.ReviewLike, { foreignKey: 'userId', as: 'reviewLikes' });
     }
   }
 

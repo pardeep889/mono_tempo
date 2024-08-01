@@ -16,5 +16,7 @@ router.put('/update/:reviewId',authenticateJWT, reviewController.updateReview);
 router.post('/review-reply',authenticateJWT, reviewController.reviewReply);
 router.post('/update-review-reply/:id',authenticateJWT, reviewController.updateReviewReply)
 
+router.post('/:reviewId/like', authenticateJWT, reviewController.likeReview);
+router.post('/:reviewId/dislike', authenticateJWT, reviewController.dislikeReview);
 
 module.exports= router;

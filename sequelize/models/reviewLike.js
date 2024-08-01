@@ -2,22 +2,25 @@
 const { Model, DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-  class Review extends Model {
+  class ReviewLike extends Model {
     static associate(models) {
-      this.hasMany(models.ReviewsReplies, { foreignKey: 'reviewId', as: 'replies' });
+      this.belongsTo(models.Review, { foreignKey: 'reviewId', as: 'review' });
       this.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-      this.hasMany(models.ReviewLike, { foreignKey: 'reviewId', as: 'likes' });
     }
   }
-  Review.init({
+  ReviewLike.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    rating: {
+    reviewId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: 'Reviews', // Name of the target model
+        key: 'id', // Key in the target model
+      },
     },
     userId: {
       type: DataTypes.INTEGER,
@@ -27,22 +30,10 @@ module.exports = (sequelize) => {
         key: 'id', // Key in the target model
       },
     },
-    text: {
-      type: DataTypes.TEXT,
-      defaultValue: null,
-    },
-    uid: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    exploreId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
   },
   {
     sequelize,
-    modelName: "Review",
+    modelName: "ReviewLike",
   });
-  return Review;
+  return ReviewLike;
 };

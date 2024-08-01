@@ -28,8 +28,7 @@ const reviewServices = async (userId, uid, data) => {
     return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
-
-const fetchAllReviewService = async (start, pageSize, exploreId) => {
+const fetchAllReviewService = async (start, pageSize, exploreId, userId) => {
   try {
     const dbResponse = await db.Review.findAndCountAll({
       where: { exploreId: exploreId },
@@ -53,7 +52,26 @@ const fetchAllReviewService = async (start, pageSize, exploreId) => {
             },
           ],
         },
+        {
+          model: db.ReviewLike,
+          as: 'likes',
+          attributes: ['id'],
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+            },
+          ],
+        },
       ],
+    });
+
+    const reviews = dbResponse.rows.map(review => {
+      const reviewData = review.toJSON();
+      reviewData.likesCount = review.likes.length;
+      reviewData.isLiked = review.likes.some(like => like.userId === userId);
+      return reviewData;
     });
 
     // Count the total number of reviews for the specified exploreId
@@ -70,7 +88,7 @@ const fetchAllReviewService = async (start, pageSize, exploreId) => {
       }]
     });
 
-    return { response: { reviews: dbResponse.rows, reviewsCount, repliesCount }, statusCode: 200, success: true };
+    return { response: { reviews, reviewsCount, repliesCount }, statusCode: 200, success: true };
   } catch (error) {
     console.log(error);
     return { response: "An error occurred", statusCode: 500, success: false };
@@ -157,6 +175,47 @@ const updateReviewRepliesService = async (userId, reviewId, updatedReply) => {
     return { response: "An error occurred", statusCode: 500, success: false };
   }
 };
+const likeReviewService = async (userId, reviewId) => {
+  try {
+    const review = await db.Review.findByPk(reviewId);
+    if (!review) {
+      return { message: "Review not found", statusCode: 404, success: false, data: null };
+    }
+
+    const like = await db.ReviewLike.findOne({ where: { userId, reviewId } });
+    if (like) {
+      return { message: "You have already liked this review", statusCode: 400, success: false, data: null };
+    }
+
+    await db.ReviewLike.create({ userId, reviewId });
+    return { message: "Review liked successfully", statusCode: 200, success: true, data: null };
+  } catch (error) {
+    console.error("Error liking review:", error);
+    return { message: "Internal server error", statusCode: 500, success: false, data: null };
+  }
+};
+
+const dislikeReviewService = async (userId, reviewId) => {
+  try {
+    const review = await db.Review.findByPk(reviewId);
+    if (!review) {
+      return { message: "Review not found", statusCode: 404, success: false, data: null };
+    }
+
+    const like = await db.ReviewLike.findOne({ where: { userId, reviewId } });
+    if (!like) {
+      return { message: "You have not liked this review", statusCode: 400, success: false, data: null };
+    }
+
+    await like.destroy();
+    return { message: "Review unliked successfully", statusCode: 200, success: true, data: null };
+  } catch (error) {
+    console.error("Error unliking review:", error);
+    return { message: "Internal server error", statusCode: 500, success: false, data: null };
+  }
+};
+
+
 
 module.exports = {
   reviewServices,
@@ -166,4 +225,6 @@ module.exports = {
   updateReviewByIdService,
   reviewRepliesService,
   updateReviewRepliesService,
+  likeReviewService,
+  dislikeReviewService
 };
