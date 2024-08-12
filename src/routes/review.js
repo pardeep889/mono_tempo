@@ -5,6 +5,10 @@ const reviewController = require('../modules/review/controllers/review');
 
 router.get('/fetch', authenticateJWT, reviewController.fetchAllReview);
 router.get('/fetch-by-id/:reviewId', authenticateJWT, reviewController.fetchReviewById);
+router.get('/fetch-by-explore/:exploreId', authenticateJWT, reviewController.fetchReviewByExploreId);
+router.get('/fetch-my-reviews/', authenticateJWT, reviewController.fetchMyReviews);
+
+router.get('/fetch-my-explore-reviews/:exploreId', authenticateJWT, reviewController.fetchMyExploreReviews);
 
 
 /*****************************private routes ****************************/

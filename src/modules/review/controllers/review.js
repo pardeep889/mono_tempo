@@ -8,6 +8,9 @@ const {
   updateReviewRepliesService,
   likeReviewService,
   dislikeReviewService,
+  fetchReviewByExploreIdServices,
+  fetchMyReviewsService,
+  fetchMyExploreReviewsService,
 } = require("../services/reviewServices");
 const db = require("../../../../sequelize/models/review");
 
@@ -80,6 +83,70 @@ const fetchReviewById = async (req, res) => {
     });
   }
 };
+
+const fetchReviewByExploreId = async (req, res) => {
+  const exploreId = req.params.exploreId;
+  try {
+    const { response, statusCode, success } = await fetchReviewByExploreIdServices(exploreId);
+
+    return res.status(statusCode || 500).json({
+      message: "Reviews fetched successfully",
+      success,
+      data: success ? response : null,
+    });
+  } catch (error) {
+    console.log("Error occurred, please check", error);
+    return res.status(500).json({
+      message: "An error occurred",
+      success: false,
+      data: null,
+    });
+  }
+};
+
+const fetchMyReviews = async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    const { response, statusCode, success } = await fetchMyReviewsService(userId);
+
+    return res.status(statusCode || 500).json({
+      message: "Reviews fetched successfully",
+      success,
+      data: success ? response : null,
+    });
+  } catch (error) {
+    console.log("Error occurred, please check", error);
+    return res.status(500).json({
+      message: "An error occurred",
+      success: false,
+      data: null,
+    });
+  }
+};
+
+
+const fetchMyExploreReviews = async (req, res) => {
+  const userId = req.user.userId;
+  const exploreId = req.params.exploreId;
+
+  try {
+    const { response, statusCode, success } = await fetchMyExploreReviewsService(userId,exploreId);
+
+    return res.status(statusCode || 500).json({
+      message: "Reviews fetched successfully",
+      success,
+      data: success ? response : null,
+    });
+  } catch (error) {
+    console.log("Error occurred, please check", error);
+    return res.status(500).json({
+      message: "An error occurred",
+      success: false,
+      data: null,
+    });
+  }
+};
+
 
 const deleteReview = async (req, res) => {
   const loggedInUser = req.user;
@@ -193,5 +260,8 @@ module.exports = {
   reviewReply,
   updateReviewReply,
   likeReview,
-  dislikeReview
+  dislikeReview,
+  fetchReviewByExploreId,
+  fetchMyReviews,
+  fetchMyExploreReviews
 };

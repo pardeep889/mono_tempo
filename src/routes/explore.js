@@ -3,19 +3,21 @@ const { authenticateJWT } = require('../middleware/auth');
 const exploreController = require('../modules/explore/controllers/explore');
 
 // ************** public routes *****************  //
-router.get('/get-explore-by-id/:id',exploreController.getExploreById);
+router.get('/fetch-single-explores/:id',authenticateJWT, exploreController.getExploreById);
 
 
 
 // ************** Protected routes *****************  //
 router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
+router.get('/fetch-my-explores',authenticateJWT, exploreController.getMyExplore);
+
 router.post('/:id/like', authenticateJWT, exploreController.likeExplore);
 router.post('/:id/unlike', authenticateJWT, exploreController.unlikeExplore);
 
 // ************** private routes *****************  //
 router.post('/update-status/:id',authenticateJWT, exploreController.updateExploreStatus);
 
-router.post('/auth/add',exploreController.exploreData);
+router.post('/auth/add',authenticateJWT, exploreController.exploreData);
 router.delete('/auth/delete-explore/:id',exploreController.deleteExplore);
 router.post('/auth/update/:id',exploreController.updateExplore);
 

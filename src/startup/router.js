@@ -16,7 +16,7 @@ router.use("/explore", exploreRoute);
 router.use("/unit",unitsRoute);
 router.use("/buyer",buyerRoute);
 router.use("/category",categoryRoute);
-router.use("/category",categoryRoute); 
+// router.use("/category",categoryRoute); 
 router.use("/review", reviewRoute);
 router.use("/review", reviewRoute);
 router.use("/payment",paymentsRoute)

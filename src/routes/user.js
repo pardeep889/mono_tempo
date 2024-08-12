@@ -19,6 +19,8 @@ function generateRefreshToken(payload) {
 
 router.post('/login',userController.logingUser);
 router.post("/create", userController.createUser);
+router.put("/update",authenticateJWT, userController.updateUser);
+
 router.post("/change-password",userController.changePassword);
 router.post("/forgot-password",userController.forgotPassword);
 router.get("/confirm/:link", userController.confirmLink);

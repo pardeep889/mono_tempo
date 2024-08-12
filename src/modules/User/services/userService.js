@@ -370,6 +370,38 @@ async function unfollowUserService(followerId, userId) {
   }
 }
 
+
+const userUpdate = async (userId, userData) => {
+  try {
+    const updatedUser = await db.User.update(userData, {
+      where: { id: userId },
+      returning: true,
+      plain: true,
+    });
+
+    if (updatedUser[1]) {
+      return {
+        data: updatedUser[1], // Return the updated user data
+        statusCode: 200,
+        success: true,
+      };
+    } else {
+      return {
+        data: null,
+        statusCode: 404,
+        success: false,
+        message: "User not found",
+      };
+    }
+  } catch (error) {
+    return {
+      data: error.message,
+      statusCode: 500,
+      success: false,
+    };
+  }
+};
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -381,4 +413,5 @@ module.exports = {
   getUserByIdService:getUserByIdService,
   followUserService: followUserService,
   unfollowUserService: unfollowUserService,
+  userUpdate: userUpdate
 };

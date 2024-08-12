@@ -12,23 +12,17 @@ const {
   updateExploreStatusService,
   likeExploreService,
   unlikeExploreService,
+  getMyExploreService,
 } = require("../services/exploreServices");
 
 const exploreData = async (req, res) => {
-  const userId = req.user.userId;
+  const uid = req.user.uid;
   try {
-    const { response, statusCode, error } = await exploreDataService(req.body);
-    if (error) {
-      return res.status(statusCode).json({
-        success: false,
-        message: "Error",
-        data: response
-      });
-    }
+    const { message, statusCode, data, success } = await exploreDataService(req.body, uid);
     return res.status(statusCode).json({
-      success: true,
-      message: "Request successful",
-      data: response
+      success,
+      message,
+      data
     });
   } catch (error) {
     return res.status(400).json({
@@ -67,27 +61,13 @@ const deleteExplore = async (req, res) => {
 
 const getExploreById = async (req, res) => {
   const exploreId = req.params.id;
-  try {
-    const { response, statusCode, error } = await getExploreByIdService(exploreId);
-    if (error) {
-      return res.status(statusCode).json({
-        success: false,
-        message: "Error",
-        data: response
-      });
-    }
+  const { uid, userId } = req.user;
+    const { message, statusCode, success, data } = await getExploreByIdService(exploreId, uid, userId);
     return res.status(statusCode).json({
-      success: true,
-      message: "Request successful",
-      data: response
+      success,
+      message,
+      data
     });
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: "Error",
-      data: null
-    });
-  }
 };
 
 const getExplore = async (req, res) => {
@@ -278,6 +258,34 @@ const unlikeExplore = async (req, res) => {
   });
 };
 
+const getMyExplore = async (req, res) => {
+  let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
+  let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
+  const { uid, userId } = req.user;
+  const {locationFilterType, locationFilterName, category, latitude, longitude, promoted} = req.query;
+  try {
+    const { response, statusCode, error } = await getMyExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);
+    if (error) {
+      return res.status(statusCode).json({
+        success: false,
+        message: "Error",
+        data: null
+      });
+    }
+    return res.status(statusCode).json({
+      success: true,
+      message: "Request successful",
+      data: response
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error",
+      data: null
+    });
+  }
+};
+
 module.exports = {
   exploreData: exploreData,
   deleteExplore: deleteExplore,
@@ -289,5 +297,6 @@ module.exports = {
   updateTag: updateTag,
   updateExploreStatus: updateExploreStatus,
   likeExplore,
-  unlikeExplore
+  unlikeExplore,
+  getMyExplore: getMyExplore
 };

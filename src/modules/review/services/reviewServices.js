@@ -43,7 +43,7 @@ const fetchAllReviewService = async (start, pageSize, exploreId, userId) => {
         {
           model: db.ReviewsReplies,
           as: 'replies',
-          attributes: ['id', 'userId', 'uid', 'reviewId', 'text', 'isCreater'],
+          attributes: ['id', 'userId', 'uid', 'reviewId', 'text', 'isCreater', 'createdAt'],
           include: [
             {
               model: db.User,
@@ -101,6 +101,45 @@ const fetchAllReviewService = async (start, pageSize, exploreId, userId) => {
 const fetchReviewByIdServices = async (reviewId) => {
   try {
     const review = await db.Review.findByPk(reviewId);
+    if (!review) {
+      return { response: "Review not found", statusCode: 404, success: false };
+    }
+    return { response: review, statusCode: 200, success: true };
+  } catch (error) {
+    console.log(error);
+    return { response: "An error occurred", statusCode: 500, success: false };
+  }
+};
+
+const fetchReviewByExploreIdServices = async (exploreId) => {
+  try {
+    const review = await db.Review.findAll({ where: { exploreId: exploreId } });
+    if (!review) {
+      return { response: "Review not found", statusCode: 404, success: false };
+    }
+    return { response: review, statusCode: 200, success: true };
+  } catch (error) {
+    console.log(error);
+    return { response: "An error occurred", statusCode: 500, success: false };
+  }
+};
+
+const fetchMyReviewsService = async (userId) => {
+  try {
+    const review = await db.Review.findAll({ where: { userId: userId } });
+    if (!review) {
+      return { response: "Review not found", statusCode: 404, success: false };
+    }
+    return { response: review, statusCode: 200, success: true };
+  } catch (error) {
+    console.log(error);
+    return { response: "An error occurred", statusCode: 500, success: false };
+  }
+};
+
+const fetchMyExploreReviewsService = async (userId, exploreId) => {
+  try {
+    const review = await db.Review.findAll({ where: { userId: userId, exploreId } });
     if (!review) {
       return { response: "Review not found", statusCode: 404, success: false };
     }
@@ -226,5 +265,8 @@ module.exports = {
   reviewRepliesService,
   updateReviewRepliesService,
   likeReviewService,
-  dislikeReviewService
+  dislikeReviewService,
+  fetchReviewByExploreIdServices,
+  fetchMyReviewsService,
+  fetchMyExploreReviewsService
 };

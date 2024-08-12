@@ -9,6 +9,7 @@ const {
   getUserByIdService,
   followUserService,
   unfollowUserService,
+  userUpdate,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -38,6 +39,19 @@ const logingUser = async (req, res) => {
     });
   }
 };
+
+const updateUser = async (req, res) => {
+  const userId = req.user.userId;
+  const userData = req.body;
+
+  const { data, statusCode, success , message} = await userUpdate(userId, userData);
+
+  return res.status(statusCode).json({
+    success: success,
+    message: message || (success ? "User updated successfully" : "Error updating user"),
+    data: data
+  });
+}
 
 const createUser = async (req, res) => {
   try {
@@ -302,5 +316,6 @@ module.exports = {
   recoverPassword,
   fetchUserByIdController,
   followUser,
-  unfollowUser
+  unfollowUser,
+  updateUser
 };
