@@ -248,6 +248,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
           'email', c."email",
           'profileImageUrl', c."profileImageUrl",
           'status', c."accountStatus",
+          'username', c."username",
           'role', c."role"
         ) AS "creatorInfo",
         json_build_object(
@@ -590,7 +591,8 @@ const getMyExploreService = async (start, pageSize, uid, locationFilterType, loc
           'email', c."email",
           'profileImageUrl', c."profileImageUrl",
           'status', c."accountStatus",
-          'role', c."role"
+          'role', c."role",
+          'username', c."username"
         ) AS "creatorInfo",
         json_build_object(
           'id', tv."id",

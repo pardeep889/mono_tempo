@@ -96,7 +96,9 @@ async function userLogin(email, password) {
           stripeCustomerId: user.stripeCustomerId,
           isSubscribed: user.isSubscribed,
           role: user.role,
-          uid: user.uid
+          uid: user.uid,
+          isEmailVerified: user.isEmailVerified,
+          username: user.username
         },
         token: token,
         refreshToken: refreshToken

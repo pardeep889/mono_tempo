@@ -1,6 +1,6 @@
 const db = require("../../../../sequelize/models");
 
-const createPaymentsService =async(userId,email,data)=>{
+const createPaymentsService =async(userId,email,uid,data)=>{
     try {
       const dbResponse =  await db.Payments.create({
             userId:userId,
@@ -12,14 +12,16 @@ const createPaymentsService =async(userId,email,data)=>{
         });
         if(dbResponse){
            await db.Buyer.create({
-                transactionId:dbResponse.dataValues.id,
+                paymentId:dbResponse.dataValues.id,
                 exploreId:dbResponse.dataValues.exploreId,
-                userId:userId
+                userId:userId,
+                uid,                
             });
         }
-        return{response:"Payment created !",statusCode:200,error:false}
+        return{message:"Payment created !",statusCode:200, success:true, data: null}
     } catch (error) {
-        return{response:"Payment failed",statusCode:400,error:true}
+        console.log(error)
+        return{message:"Payment failed",statusCode:400,success:false,  data: null}
       
     }
 };

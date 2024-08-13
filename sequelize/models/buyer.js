@@ -23,11 +23,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    purchasedDate: {
-      type: DataTypes.TEXT,
+    paymentId: {
+      type: DataTypes.STRING,
       allowNull:true
-    }
-    
+    }    
   }, {
     sequelize,
     modelName: 'Buyer',
