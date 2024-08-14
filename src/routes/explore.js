@@ -18,7 +18,7 @@ router.post('/:id/unlike', authenticateJWT, exploreController.unlikeExplore);
 router.post('/update-status/:id',authenticateJWT, exploreController.updateExploreStatus);
 
 router.post('/auth/add',authenticateJWT, exploreController.exploreData);
-router.delete('/auth/delete-explore/:id',exploreController.deleteExplore);
+router.delete('/auth/delete/:exploreId', authenticateJWT, exploreController.deleteExplore);
 router.post('/auth/update/:id',exploreController.updateExplore);
 
 

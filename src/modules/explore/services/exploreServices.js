@@ -76,32 +76,6 @@ const exploreDataService = async (data,uid) => {
   }
 };
 
-const deleteExploreService = async (exploreId, uid) => {
-  try {
-    const dbResponse = await db.Explore.findOne({
-      where: { id: exploreId, uid: uid },
-    });
-    if (dbResponse == null) {
-      return {
-        error: true,
-        response: "Explore with this id is not found",
-        statusCode: 400,
-      };
-    } else {
-      await db.Explore.destroy({
-        where: { id: exploreId },
-      });
-    }
-    return {
-      response: "Explore Deleted SuccessFully",
-      statusCode: 200,
-      error: false,
-    };
-  } catch (error) {
-    console.log("error", error);
-    return { response: error, statusCode: 400, error: true };
-  }
-};
 const getExploreByIdService = async (exploreId, uid, userId) => {
   console.log("incoming filters: exploreId, uid, userId ", exploreId, uid, userId);
 
@@ -205,12 +179,13 @@ const getExploreByIdService = async (exploreId, uid, userId) => {
     };
   }
 };
-const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId) => {
-  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);
+const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId,title) => {
+  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId,title);
 
   let categoryCondition = "";
   let locationCondition = "";
   let promotedCondition = "";
+  let titleCondition = "";
 
   if (category) {
     categoryCondition = `AND e."categoryID" = :category `;
@@ -233,6 +208,10 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
 
   if (promoted !== undefined) {
     promotedCondition = `AND e."promoted" = :promoted `;
+  }
+
+  if (title) {
+    titleCondition = `AND e."title" ILIKE :title `;
   }
 
   try {
@@ -303,11 +282,11 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
       LEFT JOIN "Units" u ON e."docId" = u."exploreId"
       LEFT JOIN "Users" c ON e."uid" = c."uid"
-      WHERE 1=1 ${categoryCondition} ${locationCondition} ${promotedCondition}
+      WHERE 1=1 ${categoryCondition} ${locationCondition} ${promotedCondition} ${titleCondition}
       GROUP BY e."id", tv."id", c."id"
       LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted, userId },
+        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted, userId, title: `%${title}%`   },
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
@@ -660,6 +639,53 @@ const getMyExploreService = async (start, pageSize, uid, locationFilterType, loc
   } catch (error) {
     console.log(error);
     return { response: error, statusCode: 400, error: true };
+  }
+};
+
+
+const deleteExploreService = async (exploreId, uid) => {
+  console.log(exploreId, uid)
+  const transaction = await db.sequelize.transaction();
+
+  try {
+    // Find the explore entry to ensure it exists and belongs to the current user
+    const explore = await db.Explore.findOne({ where: { docId: exploreId, uid: uid } });
+
+    if (!explore) {
+      return {
+        message: "Explore not found or you don't have permission to delete this Explore",
+        statusCode: 404,
+        success: false,
+        data: null
+      };
+    }
+
+    // Delete associated TrailerVideo, Units, Videos, and ExploreLikes
+    await db.TrailerVideo.destroy({ where: { exploreId }, transaction });
+    await db.Unit.destroy({ where: { exploreId }, transaction });
+    await db.Video.destroy({ where: { exploreId }, transaction }); // Assuming your Video model has an exploreId field
+    await db.ExploreLike.destroy({ where: { exploreId: explore.id }, transaction });
+
+    // Delete the Explore entry itself
+    await db.Explore.destroy({ where: { id: explore.id }, transaction });
+
+    await transaction.commit();
+
+    return {
+      message: "Explore deleted successfully",
+      statusCode: 200,
+      success: true,
+      data: null
+    };
+  } catch (error) {
+    await transaction.rollback();
+    console.log("Error deleting explore:", error);
+    return {
+      message: "Failed to delete explore",
+      statusCode: 500,
+      success: false,
+      data: null
+    };
   }
 };
 

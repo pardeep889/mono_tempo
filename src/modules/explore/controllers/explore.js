@@ -35,25 +35,19 @@ const exploreData = async (req, res) => {
 
 const deleteExplore = async (req, res) => {
   const uid = req.user.uid;
-  const exploreId = req.params.id;
+  const exploreId = req.params.exploreId;
+
   try {
-    const { response, statusCode, error } = await deleteExploreService(exploreId, uid);
-    if (error) {
-      return res.status(statusCode).json({
-        success: false,
-        message: "Error",
-        data: response
-      });
-    }
+    const { message, statusCode, success } = await deleteExploreService(exploreId, uid);
     return res.status(statusCode).json({
-      success: true,
-      message: "Request successful",
-      data: response
+      success,
+      message,
+      data: null
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message: "Error",
+      message: "Internal server error",
       data: null
     });
   }
@@ -74,9 +68,9 @@ const getExplore = async (req, res) => {
   let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
   const { uid, userId } = req.user;
-  const {locationFilterType, locationFilterName, category, latitude, longitude, promoted} = req.query;
+  const {locationFilterType, locationFilterName, category, latitude, longitude, promoted, title} = req.query;
   try {
-    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);
+    const { response, statusCode, error } = await getExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId,title);
     if (error) {
       return res.status(statusCode).json({
         success: false,
