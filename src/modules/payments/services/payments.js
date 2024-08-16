@@ -4,7 +4,7 @@ const createPaymentsService =async(userId,email,uid,data)=>{
     try {
       const dbResponse =  await db.Payments.create({
             userId:userId,
-            exploreId:data.exploreId,
+            exploreId:data.exploreDocId,
             email:email,
             amount:data.amount,
             priceId:data.priceId,

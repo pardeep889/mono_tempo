@@ -18,7 +18,7 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
     exploreId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     email: {

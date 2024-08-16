@@ -1,6 +1,7 @@
 const {
   createBuyerService,
   deleteBuyerService,
+  FetchBuyersOfExploreService,
 } = require("../services/buyers");
 
 const createBuyer = async (req, res) => {
@@ -68,7 +69,21 @@ const deleteBuyer = async (req, res) => {
   }
 };
 
+const fetchBuyersOfAnExplore = async (req, res)=> {
+  const exploreId = req.params.exploreId;
+
+  const { message, statusCode, data, success } = await FetchBuyersOfExploreService(exploreId);
+  
+  return res.status(statusCode).json({
+    message,
+    data,
+    success
+  })
+
+}
+
 module.exports = {
   createBuyer: createBuyer,
   deleteBuyer: deleteBuyer,
+  fetchBuyersOfAnExplore: fetchBuyersOfAnExplore
 };

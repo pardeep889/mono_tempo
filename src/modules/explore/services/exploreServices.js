@@ -140,6 +140,10 @@ const getExploreByIdService = async (exploreId, uid, userId) => {
           WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
           ELSE false
         END AS "owner",
+          CASE
+          WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
+          ELSE false
+        END AS "isBuyer",
         e."location"::json AS "location"  -- Properly handle the location column as JSON
       FROM "Explores" e
       LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
@@ -179,8 +183,8 @@ const getExploreByIdService = async (exploreId, uid, userId) => {
     };
   }
 };
-const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId,title) => {
-  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId,title);
+const getExploreService = async (start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId, title) => {
+  console.log("incoming filters: ", locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId, title);
 
   let categoryCondition = "";
   let locationCondition = "";
@@ -277,6 +281,10 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
           WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
           ELSE false
         END AS "owner",
+        CASE
+          WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
+          ELSE false
+        END AS "isBuyer",
         e."location"::json AS "location"  -- Properly handle the location column as JSON
       FROM "Explores" e
       LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
@@ -286,7 +294,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
       GROUP BY e."id", tv."id", c."id"
       LIMIT :limit OFFSET :offset`,
       {
-        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted, userId, title: `%${title}%`   },
+        replacements: { limit: pageSize, offset: start, uid, category, locationFilterName, latitude, longitude, promoted, userId, title: `%${title}%` },
         type: db.sequelize.QueryTypes.SELECT,
       }
     );
@@ -297,6 +305,7 @@ const getExploreService = async (start, pageSize, uid, locationFilterType, locat
     return { response: error, statusCode: 400, error: true };
   }
 };
+
 
 
 
@@ -620,6 +629,10 @@ const getMyExploreService = async (start, pageSize, uid, locationFilterType, loc
           WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
           ELSE false
         END AS "owner",
+          CASE
+          WHEN EXISTS (SELECT 1 FROM "Buyers" b WHERE b."exploreId" = e."docId" AND b."uid" = :uid) THEN true
+          ELSE false
+        END AS "isBuyer",
         e."location"::json AS "location"  -- Properly handle the location column as JSON
       FROM "Explores" e
       LEFT JOIN "TrailerVideos" tv ON e."docId" = tv."exploreId"
