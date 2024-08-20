@@ -255,7 +255,7 @@ const unlikeExplore = async (req, res) => {
 const getMyExplore = async (req, res) => {
   let pageSize = req.query.pSize ? Number(req.query.pSize) : 10;
   let start = req.query.page ? pageSize * (Number(req.query.page) - 1) : 0;
-  const { uid, userId } = req.user;
+  const { uid, userId } = req.body;
   const {locationFilterType, locationFilterName, category, latitude, longitude, promoted} = req.query;
   try {
     const { response, statusCode, error } = await getMyExploreService(start, pageSize, uid, locationFilterType, locationFilterName, category, latitude, longitude, promoted, userId);

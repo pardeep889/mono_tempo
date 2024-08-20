@@ -29,6 +29,8 @@ router.post("/recover-password",userController.recoverPassword);
 router.get("/fetch/:id",authenticateJWT, userController.fetchUserByIdController);
 router.post('/follow', authenticateJWT, userController.followUser); 
 router.post('/unfollow', authenticateJWT, userController.unfollowUser);
+router.get("/fetch-followers/:id",authenticateJWT, userController.fetchFollowersController);
+router.get("/fetch-following/:id",authenticateJWT, userController.fetchFollowingController);
 
 
 router.post('/refresh-token', verifyRefreshToken, (req, res) => {

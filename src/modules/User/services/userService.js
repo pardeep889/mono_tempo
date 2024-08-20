@@ -10,7 +10,7 @@ const generateUUID = require("../../util/ uuidGenerator");
 const sendEmail = require("../../util/sendEmail");
 const saltRounds = 10;
 
-async function getUserByIdService(userId, start = 0, pageSize = 10) {
+async function getUserByIdService(id, userId, start = 0, pageSize = 10) {
   try {
     const user = await db.User.findByPk(userId, {
       attributes: { exclude: ['password', 'forgotLink'] },
@@ -44,12 +44,17 @@ async function getUserByIdService(userId, start = 0, pageSize = 10) {
       offset: start
     });
 
+    const isFollowing = await db.Follow.findOne({
+      where: { followerId: id, followedId: userId },
+    });
+
     const userWithFollowData = {
       ...user.toJSON(),
       following: following.rows.map(f => f.followed),
       followingCount: following.count,
       followers: followers.rows.map(f => f.follower),
-      followersCount: followers.count
+      followersCount: followers.countisFollowing,
+      isFollowing: !!isFollowing
     };
 
     return { message: "User Profile Fetched Successfully", statusCode: 200, success: true, data: userWithFollowData };
@@ -404,6 +409,68 @@ const userUpdate = async (userId, userData) => {
   }
 };
 
+async function fetchFollowers(userId, start = 0, pageSize = 10) {
+  console.log("Followers", userId, start, pageSize)
+  try {
+    // Fetch followers with pagination
+    const followers = await db.Follow.findAndCountAll({
+      where: { followedId: userId },
+      include: [{
+        model: db.User,
+        as: 'follower',
+        attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+      }],
+      limit: pageSize,
+      offset: start
+    });
+
+    // Structure the response
+    const response = {
+      followers: followers.rows.map(f => f.follower),
+      totalFollowers: followers.count,
+      currentPage: Math.floor(start / pageSize) + 1,
+      pageSize: pageSize,
+    };
+
+    return { message: "Followers Fetched Successfully", statusCode: 200, success: true, data: response };
+  } catch (error) {
+    console.error("Error fetching followers:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function fetchFollowing(userId, start = 0, pageSize = 10) {
+  console.log("Following", userId, start, pageSize)
+
+  try {
+    // Fetch following users with pagination
+    const following = await db.Follow.findAndCountAll({
+      where: { followerId: userId },
+      include: [{
+        model: db.User,
+        as: 'followed',
+        attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+      }],
+      limit: pageSize,
+      offset: start
+    });
+
+    // Structure the response
+    const response = {
+      following: following.rows.map(f => f.followed),
+      totalFollowing: following.count,
+      currentPage: Math.floor(start / pageSize) + 1,
+      pageSize: pageSize,
+    };
+
+    return { message: "Following Fetched Successfully", statusCode: 200, success: true, data: response };
+  } catch (error) {
+    console.error("Error fetching following:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -415,5 +482,7 @@ module.exports = {
   getUserByIdService:getUserByIdService,
   followUserService: followUserService,
   unfollowUserService: unfollowUserService,
-  userUpdate: userUpdate
+  userUpdate: userUpdate,
+  fetchFollowers: fetchFollowers,
+  fetchFollowing: fetchFollowing
 };

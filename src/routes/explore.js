@@ -9,7 +9,7 @@ router.get('/fetch-single-explores/:id',authenticateJWT, exploreController.getEx
 
 // ************** Protected routes *****************  //
 router.get('/fetch-explores',authenticateJWT, exploreController.getExplore);
-router.get('/fetch-my-explores',authenticateJWT, exploreController.getMyExplore);
+router.post('/fetch-user-explores',authenticateJWT, exploreController.getMyExplore);
 
 router.post('/:id/like', authenticateJWT, exploreController.likeExplore);
 router.post('/:id/unlike', authenticateJWT, exploreController.unlikeExplore);

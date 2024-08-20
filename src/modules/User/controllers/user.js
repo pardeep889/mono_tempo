@@ -10,6 +10,8 @@ const {
   followUserService,
   unfollowUserService,
   userUpdate,
+  fetchFollowers,
+  fetchFollowing,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -243,7 +245,8 @@ const recoverPassword = async (req, res) => {
 const fetchUserByIdController = async (req, res) => {
   const { id } = req.params;
   const { start = 0, pageSize = 10 } = req.query;
-  const { message, success, statusCode, data } = await getUserByIdService(id, parseInt(start), parseInt(pageSize));
+  const {userId} = req.user;
+  const { message, success, statusCode, data } = await getUserByIdService(userId, id, parseInt(start), parseInt(pageSize));
   return res.status(statusCode).json({
     success,
     message,
@@ -306,6 +309,29 @@ const unfollowUser = async (req, res) => {
   });
 };
 
+const fetchFollowersController = async (req, res) => {
+  const { start = 0, pageSize = 10 } = req.query;
+  const userId = req.params.id;
+  const { message, success, statusCode, data } = await fetchFollowers(userId, parseInt(start), parseInt(pageSize));
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const fetchFollowingController = async (req, res) => {
+  const { start = 0, pageSize = 10 } = req.query;
+  const userId = req.params.id;
+  const { message, success, statusCode, data } = await fetchFollowing(userId, parseInt(start), parseInt(pageSize));
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+
 module.exports = {
   logingUser,
   createUser,
@@ -317,5 +343,7 @@ module.exports = {
   fetchUserByIdController,
   followUser,
   unfollowUser,
-  updateUser
+  updateUser,
+  fetchFollowersController,
+  fetchFollowingController
 };
