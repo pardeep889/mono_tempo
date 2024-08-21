@@ -13,6 +13,10 @@ const {
   likeExploreService,
   unlikeExploreService,
   getMyExploreService,
+  updateTrailerVideoService,
+  updateUnitDetailsService,
+  updateVideoDetailsService,
+  updateExploreDetailsService,
 } = require("../services/exploreServices");
 
 const exploreData = async (req, res) => {
@@ -280,6 +284,74 @@ const getMyExplore = async (req, res) => {
   }
 };
 
+const updateTrailerVideo = async (req, res) => {
+  const { id } = req.params;
+  const uid = req.user.uid;
+  try {
+    const { message, statusCode, success } = await updateTrailerVideoService(id, req.body, uid);
+    return res.status(statusCode).json({
+      success,
+      message
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error updating trailer video",
+    });
+  }
+};
+
+const updateUnitDetails = async (req, res) => {
+  const { id } = req.params;
+  const uid = req.user.uid;
+  try {
+    const { message, statusCode, success } = await updateUnitDetailsService(id, req.body);
+    return res.status(statusCode).json({
+      success,
+      message
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error updating unit details",
+    });
+  }
+};
+
+const updateVideoDetails = async (req, res) => {
+  const { id } = req.params;
+  const uid = req.user.uid;
+  try {
+    const { message, statusCode, success } = await updateVideoDetailsService(id, req.body);
+    return res.status(statusCode).json({
+      success,
+      message
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error updating video details",
+    });
+  }
+};
+
+const updateExploreDetails = async (req, res) => {
+  const { id } = req.params;
+  const uid = req.user.uid;
+  try {
+    const { message, statusCode, success } = await updateExploreDetailsService(id, req.body, uid);
+    return res.status(statusCode).json({
+      success,
+      message
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Error updating explore details",
+    });
+  }
+};
+
 module.exports = {
   exploreData: exploreData,
   deleteExplore: deleteExplore,
@@ -292,5 +364,9 @@ module.exports = {
   updateExploreStatus: updateExploreStatus,
   likeExplore,
   unlikeExplore,
-  getMyExplore: getMyExplore
+  getMyExplore: getMyExplore,
+  updateTrailerVideo: updateTrailerVideo,
+  updateUnitDetails: updateUnitDetails,
+  updateVideoDetails: updateVideoDetails,
+  updateExploreDetails: updateExploreDetails
 };

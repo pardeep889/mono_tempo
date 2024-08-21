@@ -702,6 +702,145 @@ const deleteExploreService = async (exploreId, uid) => {
   }
 };
 
+
+const updateTrailerVideoService = async (id, data, uid) => {
+  try {
+    const trailerVideo = await db.TrailerVideo.findOne({ where: { id, uid } });
+    if (!trailerVideo) {
+      return {
+        message: "Trailer video not found",
+        statusCode: 404,
+        success: false
+      };
+    }
+
+    await trailerVideo.update({
+      videoPath: data.videoPath,
+      localPath: data.localPath,
+      coverImagePath: data.coverImagePath,
+    });
+
+    return {
+      message: "Trailer video updated successfully",
+      statusCode: 200,
+      success: true
+    };
+  } catch (error) {
+    console.log("Error updating trailer video:", error);
+    return {
+      message: "Internal server error",
+      statusCode: 500,
+      success: false
+    };
+  }
+};
+
+const updateUnitDetailsService = async (id, data) => {
+  try {
+    const unit = await db.Unit.findOne({ where: { id } });
+    if (!unit) {
+      return {
+        message: "Unit not found",
+        statusCode: 404,
+        success: false
+      };
+    }
+
+    await unit.update({
+      title: data.title,
+      description: data.description,
+      unitNumber: data.unitNumber,
+    });
+
+    return {
+      message: "Unit details updated successfully",
+      statusCode: 200,
+      success: true
+    };
+  } catch (error) {
+    console.log("Error updating unit details:", error);
+    return {
+      message: "Internal server error",
+      statusCode: 500,
+      success: false
+    };
+  }
+};
+
+const updateVideoDetailsService = async (id, data) => {
+  try {
+    const video = await db.Video.findOne({ where: { id } });
+    if (!video) {
+      return {
+        message: "Video not found",
+        statusCode: 404,
+        success: false
+      };
+    }
+
+    await video.update({
+      caption: data.caption,
+      videoNumber: data.videoNumber,
+      title: data.title,
+      videoDetails: data.videoDetails,
+    });
+
+    return {
+      message: "Video details updated successfully",
+      statusCode: 200,
+      success: true
+    };
+  } catch (error) {
+    console.log("Error updating video details:", error);
+    return {
+      message: "Internal server error",
+      statusCode: 500,
+      success: false
+    };
+  }
+};
+
+
+const updateExploreDetailsService = async (id, data, uid) => {
+  console.log(id, uid)
+  try {
+    const explore = await db.Explore.findOne({ where: { id, uid } });
+    if (!explore) {
+      return {
+        message: "Explore entry not found",
+        statusCode: 404,
+        success: false
+      };
+    }
+
+    await explore.update({
+      collabType: data.collabType,
+      categoryID: data.categoryID,
+      title: data.title,
+      description: data.description,
+      status: data.status,
+      location: data.location,
+      tags: data.tags,
+      isFree: data.isFree,
+      price: data.price,
+      connectedGroup: data.connectedGroup,
+    });
+
+    return {
+      message: "Explore details updated successfully",
+      statusCode: 200,
+      success: true
+    };
+  } catch (error) {
+    console.log("Error updating explore details:", error);
+    return {
+      message: "Internal server error",
+      statusCode: 500,
+      success: false
+    };
+  }
+};
+
 module.exports = {
   exploreDataService: exploreDataService,
   deleteExploreService: deleteExploreService,
@@ -714,5 +853,10 @@ module.exports = {
   updateExploreStatusService: updateExploreStatusService,
   likeExploreService: likeExploreService,
   unlikeExploreService: unlikeExploreService,
-  getMyExploreService: getMyExploreService
+  getMyExploreService: getMyExploreService,
+  updateTrailerVideoService: updateTrailerVideoService,
+  updateUnitDetailsService: updateUnitDetailsService,
+  updateVideoDetailsService: updateVideoDetailsService,
+  updateExploreDetailsService: updateExploreDetailsService
+
 };

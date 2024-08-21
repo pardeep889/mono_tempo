@@ -26,4 +26,11 @@ router.post('/auth/add-new-tag/:id',authenticateJWT, exploreController.addTags);
 router.post('/auth/update-tag/:id',authenticateJWT, exploreController.updateTag);
 router.delete('/auth/remove-tag/:id',authenticateJWT, exploreController.removeTag);
 
+// Update Routes 
+router.put('/trailerVideo/:id', authenticateJWT, exploreController.updateTrailerVideo);
+router.put('/unit/:id', authenticateJWT, exploreController.updateUnitDetails);
+router.put('/video/:id', authenticateJWT, exploreController.updateVideoDetails);
+router.put('/update/:id', authenticateJWT, exploreController.updateExploreDetails);
+
+
 module.exports= router;
