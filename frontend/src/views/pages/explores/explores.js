@@ -106,7 +106,7 @@ const ExploreTable = () => {
                       <CButton
                         color="primary"
                         onClick={() => promoteExplore(explore)}
-                        disabled={promoting}
+                        disabled={explore.promoted}
                       >
                         {promoting ? 'Promoting...' : 'Promote'}
                       </CButton>

@@ -53,7 +53,7 @@ async function getUserByIdService(id, userId, start = 0, pageSize = 10) {
       following: following.rows.map(f => f.followed),
       followingCount: following.count,
       followers: followers.rows.map(f => f.follower),
-      followersCount: followers.countisFollowing,
+      followersCount: followers.count,
       isFollowing: !!isFollowing
     };
 
@@ -347,17 +347,45 @@ async function recoverPasswordService(email, new_password) {
     return { response: error, statusCode: 400, error: true };
   }
 }
-
-async function followUserService(followerId, userId){
+async function followUserService(followerId, userId) {
   try {
+    // Check if the follower already follows the user
+    const existingFollow = await db.Follow.findOne({
+      where: {
+        followerId: followerId,
+        followedId: userId,
+      },
+    });
+
+    if (existingFollow) {
+      return { 
+        message: "User is already followed by you", 
+        statusCode: 400, 
+        success: false, 
+        data: null 
+      };
+    }
+
+    // If not followed yet, create a new follow entry
     await db.Follow.create({
       followerId: followerId,
       followedId: userId,
     });
-    return { message: "Successfully followed the user", statusCode: 200,success: true, data: null};
+
+    return { 
+      message: "Successfully followed the user", 
+      statusCode: 200, 
+      success: true, 
+      data: null 
+    };
   } catch (error) {
     console.error("Error following user:", error);
-    return { message: "Internal Server Error", statusCode: 500, success: false, data: null};
+    return { 
+      message: "Internal Server Error", 
+      statusCode: 500, 
+      success: false, 
+      data: null 
+    };
   }
 }
 
