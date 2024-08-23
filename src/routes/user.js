@@ -28,6 +28,7 @@ router.post("/confirm-password",userController.confirmPassword);
 router.post("/recover-password",userController.recoverPassword);
 router.get("/fetch/:id",authenticateJWT, userController.fetchUserByIdController);
 router.post('/follow', authenticateJWT, userController.followUser); 
+router.post('/remove-follower', authenticateJWT, userController.removeFollower); 
 router.post('/unfollow', authenticateJWT, userController.unfollowUser);
 router.get("/fetch-followers/:id",authenticateJWT, userController.fetchFollowersController);
 router.get("/fetch-following/:id",authenticateJWT, userController.fetchFollowingController);

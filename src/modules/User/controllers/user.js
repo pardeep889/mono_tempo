@@ -12,6 +12,7 @@ const {
   userUpdate,
   fetchFollowers,
   fetchFollowing,
+  removeFollowerService,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -282,6 +283,35 @@ const followUser = async (req, res) => {
 
 };
 
+
+const removeFollower = async (req, res) => {
+  const { userId } = req.body;
+  const followerId = req.user.userId;
+
+  if (userId === followerId) {
+    return res.status(400).json({
+      success: false,
+      message: "You cannot remove following yourself",
+      data: null
+    });
+  }
+  if(!userId || followerId == null) {
+    return res.status(400).json({
+      message: "userId to follow cannot be null",
+      success: false,
+      data: null
+    })
+  }
+  
+  const { message, success, statusCode, data } = await removeFollowerService(followerId, userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+
+};
+
 const unfollowUser = async (req, res) => {
   const { userId } = req.body;
   const followerId = req.user.userId;
@@ -345,5 +375,6 @@ module.exports = {
   unfollowUser,
   updateUser,
   fetchFollowersController,
-  fetchFollowingController
+  fetchFollowingController,
+  removeFollower
 };

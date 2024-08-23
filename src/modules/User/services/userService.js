@@ -389,6 +389,51 @@ async function followUserService(followerId, userId) {
   }
 }
 
+async function removeFollowerService(userId, followerId) {
+  try {
+    // Check if the follower is following the user
+    const existingFollow = await db.Follow.findOne({
+      where: {
+        followerId: followerId,
+        followedId: userId, // Note: userId is the user being followed (you)
+      },
+    });
+
+    if (!existingFollow) {
+      return { 
+        message: "This user is not following you", 
+        statusCode: 400, 
+        success: false, 
+        data: null 
+      };
+    }
+
+    // If the follow relationship exists, remove it
+    await db.Follow.destroy({
+      where: {
+        followerId: followerId,
+        followedId: userId,
+      },
+    });
+
+    return { 
+      message: "Successfully removed the follower", 
+      statusCode: 200, 
+      success: true, 
+      data: null 
+    };
+  } catch (error) {
+    console.error("Error removing follower:", error);
+    return { 
+      message: "Internal Server Error", 
+      statusCode: 500, 
+      success: false, 
+      data: null 
+    };
+  }
+}
+
+
 async function unfollowUserService(followerId, userId) {
   console.log(followerId, userId)
   try {
@@ -436,9 +481,8 @@ const userUpdate = async (userId, userData) => {
     };
   }
 };
-
 async function fetchFollowers(userId, start = 0, pageSize = 10) {
-  console.log("Followers", userId, start, pageSize)
+  console.log("Followers", userId, start, pageSize);
   try {
     // Fetch followers with pagination
     const followers = await db.Follow.findAndCountAll({
@@ -452,9 +496,25 @@ async function fetchFollowers(userId, start = 0, pageSize = 10) {
       offset: start
     });
 
+    // For each follower, check if the user is following them
+    const followersWithIsFollowing = await Promise.all(
+      followers.rows.map(async f => {
+        const isFollowing = await db.Follow.findOne({
+          where: {
+            followerId: userId,         // You are the follower
+            followedId: f.follower.id,  // The follower is the one being followed
+          }
+        });
+        return {
+          ...f.follower.get({ plain: true }), // Get plain user object
+          isFollowing: !!isFollowing,          // Convert to boolean
+        };
+      })
+    );
+
     // Structure the response
     const response = {
-      followers: followers.rows.map(f => f.follower),
+      followers: followersWithIsFollowing,
       totalFollowers: followers.count,
       currentPage: Math.floor(start / pageSize) + 1,
       pageSize: pageSize,
@@ -466,6 +526,7 @@ async function fetchFollowers(userId, start = 0, pageSize = 10) {
     return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
   }
 }
+
 
 async function fetchFollowing(userId, start = 0, pageSize = 10) {
   console.log("Following", userId, start, pageSize)
@@ -512,5 +573,6 @@ module.exports = {
   unfollowUserService: unfollowUserService,
   userUpdate: userUpdate,
   fetchFollowers: fetchFollowers,
-  fetchFollowing: fetchFollowing
+  fetchFollowing: fetchFollowing,
+  removeFollowerService: removeFollowerService
 };
