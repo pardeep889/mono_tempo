@@ -2,6 +2,8 @@
 const router = require('express').Router();
 const { verifyRefreshToken, authenticateJWT } = require('../middleware/auth');
 const userController = require("../modules/User/controllers/user")
+const groupController = require('../modules/User/controllers/groupController');
+
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
@@ -69,4 +71,5 @@ router.post('/refresh-token', verifyRefreshToken, (req, res) => {
     
   });
 
+router.post("/create-group", authenticateJWT, groupController.createGroupController);
 module.exports = router;
