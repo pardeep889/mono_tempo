@@ -36,7 +36,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         message: "Group created successfully",
         statusCode: 201,
         success: true,
-        data: { group: group },
+        data: group,
       };
     } catch (error) {
       console.error("Error creating group:", error);
@@ -117,10 +117,9 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         include: [{
           model: db.Group,
           as: 'Group', // This should match the alias in your model association
-          attributes: ['id', 'name', 'description', 'type'], // Add more fields if needed
+          attributes: ['id', 'name', 'description', 'type','createdAt', 'icon'], // Add more fields if needed
         }],
       });
-  
       // Structure the response
       const response = userGroups.map(ug => ({
         groupId: ug.Group.id, // Ensure this matches the alias too
@@ -128,6 +127,8 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         groupDescription: ug.Group.description,
         groupType: ug.Group.type,
         userRole: ug.role,
+        icon: ug.icon,
+        createdAt: ug.Group.createdAt,
       }));
   
       return { 
