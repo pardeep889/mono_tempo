@@ -25,6 +25,15 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.ReviewsReplies, { foreignKey: 'userId', as: 'reviewReplies' });
 
       this.hasMany(models.ReviewLike, { foreignKey: 'userId', as: 'reviewLikes' });
+      this.hasMany(models.GroupMembership, { foreignKey: 'userId', as: 'groupMemberships' });
+      this.hasMany(models.Group, { foreignKey: 'creatorId', as: 'createdGroups' });
+      this.belongsToMany(models.Group, {
+        through: models.GroupMembership,
+        as: 'groups',
+        foreignKey: 'userId',
+        otherKey: 'groupId',
+      });
+
     }
   }
 

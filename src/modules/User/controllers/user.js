@@ -13,6 +13,7 @@ const {
   fetchFollowers,
   fetchFollowing,
   removeFollowerService,
+  searchUsers,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -361,6 +362,19 @@ const fetchFollowingController = async (req, res) => {
   });
 };
 
+async function searchUsersController(req, res) {
+  const { name, page = 1, limit = 10 } = req.query;
+
+  const { message, statusCode, success, data } = await searchUsers(name, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+}
+
+
 
 module.exports = {
   logingUser,
@@ -376,5 +390,6 @@ module.exports = {
   updateUser,
   fetchFollowersController,
   fetchFollowingController,
-  removeFollower
+  removeFollower,
+  searchUsersController
 };

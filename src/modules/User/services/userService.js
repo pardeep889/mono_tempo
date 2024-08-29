@@ -9,6 +9,8 @@ const { generateRandomCode, generateRandomCodeNumber8Digit } = require("../../ut
 const generateUUID = require("../../util/ uuidGenerator");
 const sendEmail = require("../../util/sendEmail");
 const saltRounds = 10;
+const { Op } = require("sequelize");
+
 
 async function getUserByIdService(id, userId, start = 0, pageSize = 10) {
   try {
@@ -559,6 +561,41 @@ async function fetchFollowing(userId, start = 0, pageSize = 10) {
   }
 }
 
+async function searchUsers(name, page = 1, limit = 10) {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Search users by name
+    const { count, rows } = await db.User.findAndCountAll({
+      where: {
+        [Op.or]: [
+          { firstName: { [Op.iLike]: `%${name}%` } },
+          { lastName: { [Op.iLike]: `%${name}%` } },
+          { username: { [Op.iLike]: `%${name}%` } }
+        ]
+      },
+      attributes: ['id', 'username', 'email', 'fullName'],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      message: "Users fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: {
+        users: rows,
+        currentPage: parseInt(page),
+        totalPages
+      }
+    };
+  } catch (error) {
+    console.error("Error searching users:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
 
 module.exports = {
   userLogin: userLogin,
@@ -574,5 +611,6 @@ module.exports = {
   userUpdate: userUpdate,
   fetchFollowers: fetchFollowers,
   fetchFollowing: fetchFollowing,
-  removeFollowerService: removeFollowerService
+  removeFollowerService: removeFollowerService,
+  searchUsers: searchUsers
 };

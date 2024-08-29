@@ -34,6 +34,7 @@ router.post('/remove-follower', authenticateJWT, userController.removeFollower);
 router.post('/unfollow', authenticateJWT, userController.unfollowUser);
 router.get("/fetch-followers/:id",authenticateJWT, userController.fetchFollowersController);
 router.get("/fetch-following/:id",authenticateJWT, userController.fetchFollowingController);
+router.get('/search', authenticateJWT, userController.searchUsersController);
 
 
 router.post('/refresh-token', verifyRefreshToken, (req, res) => {
@@ -71,5 +72,19 @@ router.post('/refresh-token', verifyRefreshToken, (req, res) => {
     
   });
 
+// Groups Routes
 router.post("/create-group", authenticateJWT, groupController.createGroupController);
+router.post("/add-group-member", authenticateJWT, groupController.addGroupMemberController);
+router.get("/my-groups", authenticateJWT, groupController.fetchUserGroupsController);
+router.post("/groups/:groupId/invite", authenticateJWT, groupController.inviteUserToGroupController);
+router.post("/groups/:groupId/accept-invite", authenticateJWT, groupController.acceptGroupInviteController);
+router.post("/groups/:groupId/make-admin", authenticateJWT, groupController.makeAdminController);
+router.get('/my-invites', authenticateJWT, groupController.fetchMyInvitesController);
+router.put('/group/:groupId/update', authenticateJWT, groupController.updateGroupDescriptionController);
+router.post('/leave-group', authenticateJWT, groupController.leaveGroupController);
+router.get('/group/:groupId/users', authenticateJWT, groupController.fetchGroupUsersController);
+router.delete('/:groupId/users/:userId', authenticateJWT, groupController.removeUserFromGroup);
+router.get('/group/:groupId', authenticateJWT, groupController.getGroupDetailsController);
+router.get('/groups/search', authenticateJWT, groupController.searchGroupsController);
+
 module.exports = router;
