@@ -14,6 +14,7 @@ const {
   fetchFollowing,
   removeFollowerService,
   searchUsers,
+  checkUsername,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -374,6 +375,18 @@ async function searchUsersController(req, res) {
   });
 }
 
+async function checkUsernameController(req, res) {
+  const { username } = req.query;
+
+  const { message, statusCode, success, data } = await checkUsername(username);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+}
+
 
 
 module.exports = {
@@ -391,5 +404,6 @@ module.exports = {
   fetchFollowersController,
   fetchFollowingController,
   removeFollower,
-  searchUsersController
+  searchUsersController,
+  checkUsernameController
 };

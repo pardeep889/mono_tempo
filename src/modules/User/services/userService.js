@@ -597,6 +597,41 @@ async function searchUsers(name, page = 1, limit = 10) {
   }
 }
 
+async function checkUsername(username) {
+  try {
+    const user = await db.User.findOne({
+      where: {
+        username: username
+      }
+    });
+
+    if (user) {
+      return {
+        message: "Username already exists",
+        statusCode: 200,
+        success: true,
+        data: { exists: true }
+      };
+    } else {
+      return {
+        message: "Username is available",
+        statusCode: 200,
+        success: true,
+        data: { exists: false }
+      };
+    }
+  } catch (error) {
+    console.error("Error checking username:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null
+    };
+  }
+}
+
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -612,5 +647,6 @@ module.exports = {
   fetchFollowers: fetchFollowers,
   fetchFollowing: fetchFollowing,
   removeFollowerService: removeFollowerService,
-  searchUsers: searchUsers
+  searchUsers: searchUsers,
+  checkUsername: checkUsername
 };

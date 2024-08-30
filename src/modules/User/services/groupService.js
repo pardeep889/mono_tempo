@@ -458,7 +458,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         message: "Group details fetched successfully",
         statusCode: 200,
         success: true,
-        data: { group }
+        data: group
       };
     } catch (error) {
       console.error("Error fetching group details:", error);
