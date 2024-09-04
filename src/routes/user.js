@@ -89,4 +89,9 @@ router.delete('/:groupId/users/:userId', authenticateJWT, groupController.remove
 router.get('/group/:groupId', authenticateJWT, groupController.getGroupDetailsController);
 router.get('/groups/search', authenticateJWT, groupController.searchGroupsController);
 
+
+// Chat Routes 
+router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);
+router.get('/self-chat', authenticateJWT, userController.fetchSelfChatMessagesController);
+
 module.exports = router;

@@ -15,6 +15,8 @@ const {
   removeFollowerService,
   searchUsers,
   checkUsername,
+  createSelfChatMessage,
+  fetchSelfChatMessages,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -388,6 +390,31 @@ async function checkUsernameController(req, res) {
 }
 
 
+async function createSelfChatMessageController(req, res) {
+  const { text, attachmentUrl } = req.body;
+  const { userId } = req.user; 
+
+  const { message, statusCode, success, data } = await createSelfChatMessage(userId, text, attachmentUrl);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function fetchSelfChatMessagesController(req, res) {
+  const { userId } = req.user; 
+  const { page = 1, limit = 10 } = req.query;
+
+  const { message, statusCode, success, data } = await fetchSelfChatMessages(userId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
 
 module.exports = {
   logingUser,
@@ -405,5 +432,7 @@ module.exports = {
   fetchFollowingController,
   removeFollower,
   searchUsersController,
-  checkUsernameController
+  checkUsernameController,
+  createSelfChatMessageController,
+  fetchSelfChatMessagesController
 };

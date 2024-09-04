@@ -560,21 +560,26 @@ async function fetchFollowing(userId, start = 0, pageSize = 10) {
     return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
   }
 }
-
 async function searchUsers(name, page = 1, limit = 10) {
   try {
     const offset = (page - 1) * limit;
+    const searchTerms = name.split(" ").map(term => `%${term}%`);
 
-    // Search users by name
+    // Build the search conditions for each term
+    const searchConditions = searchTerms.map(term => ({
+      [Op.or]: [
+        { firstName: { [Op.iLike]: term } },
+        { lastName: { [Op.iLike]: term } },
+        { username: { [Op.iLike]: term } }
+      ]
+    }));
+
+    // Combine the conditions using Sequelize's Op.and
     const { count, rows } = await db.User.findAndCountAll({
       where: {
-        [Op.or]: [
-          { firstName: { [Op.iLike]: `%${name}%` } },
-          { lastName: { [Op.iLike]: `%${name}%` } },
-          { username: { [Op.iLike]: `%${name}%` } }
-        ]
+        [Op.and]: searchConditions
       },
-      attributes: ['id', 'username', 'email', 'fullName'],
+      attributes: ['id', 'username', 'profileImageUrl', 'fullName'],
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -631,6 +636,68 @@ async function checkUsername(username) {
   }
 }
 
+async function createSelfChatMessage(userId, text, attachmentUrl) {
+  try {
+    // Find or create a self-chat for the user
+    let chat = await db.Chat.findOne({ where: { userId, type: 'SELF' } });
+    if (!chat) {
+      chat = await db.Chat.create({ userId, type: 'SELF' });
+    }
+
+    // Create a self-chat message
+    const message = await db.Message.create({
+      text,
+      attachmentUrl,
+      senderId: userId,
+      isSelfChat: true,
+    });
+
+    return {
+      message: 'Self-chat message created successfully',
+      statusCode: 201,
+      success: true,
+      data: { message },
+    };
+  } catch (error) {
+    console.error('Error creating self-chat message:', error);
+    return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+  }
+}
+
+
+// Service function to fetch self-chat messages
+async function fetchSelfChatMessages(userId, page = 1, limit = 10) {
+  try {
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await db.Message.findAndCountAll({
+      where: {
+        senderId: userId,
+        isSelfChat: true,
+      },
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      message: 'Self-chat messages fetched successfully',
+      statusCode: 200,
+      success: true,
+      data: {
+        messages: rows,
+        currentPage: parseInt(page),
+        totalPages,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching self-chat messages:', error);
+    return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+  }
+}
+
 
 module.exports = {
   userLogin: userLogin,
@@ -648,5 +715,7 @@ module.exports = {
   fetchFollowing: fetchFollowing,
   removeFollowerService: removeFollowerService,
   searchUsers: searchUsers,
-  checkUsername: checkUsername
+  checkUsername: checkUsername,
+  fetchSelfChatMessages: fetchSelfChatMessages,
+  createSelfChatMessage: createSelfChatMessage
 };
