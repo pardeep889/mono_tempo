@@ -17,6 +17,11 @@ const {
   checkUsername,
   createSelfChatMessage,
   fetchSelfChatMessages,
+  sendMessageToGroup,
+  sendMessageToUser,
+  fetchGroupMessages,
+  fetchPrivateMessages,
+  fetchChatDetails,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -416,6 +421,82 @@ async function fetchSelfChatMessagesController(req, res) {
   });
 }
 
+async function sendMessageToGroupController(req, res) {
+  const { groupId } = req.params;
+  const { text, attachmentUrl } = req.body;
+  const senderId = req.user.userId;
+  
+
+  const { message, statusCode, success, data } = await sendMessageToGroup(groupId, senderId, text, attachmentUrl, req.app.get('io'));
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function sendMessageToUserController(req, res) {
+  const { receiverId } = req.params;  // Change groupId to receiverId
+  const { text, attachmentUrl } = req.body;
+  const senderId = req.user.userId;  // Sender user ID from authenticated user
+
+  // Call sendMessageToUser with the correct parameters: senderId, receiverId, text, attachmentUrl
+  const { message, statusCode, success, data } = await sendMessageToUser(senderId, receiverId, text, attachmentUrl, req.app.get('io'));
+
+  // Return the response with the correct format
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function fetchGroupMessagesController(req, res) {
+  const { groupId } = req.params;
+  const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
+  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
+
+  const { message, statusCode, success, data } = await fetchGroupMessages(groupId, userId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function fetchPrivateMessagesController(req, res) {
+  const { otherUserId } = req.params; // Get the other user's ID from the request params
+  const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
+  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
+
+  const { message, statusCode, success, data } = await fetchPrivateMessages(userId, otherUserId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+
+async function fetchUserChat(req, res) {
+  const { userId } = req.user; // Get userId from the request params
+  const { page = 1, limit = 10 } = req.query; // Get pagination parameters from the query string
+
+  const { message, statusCode, success, data } = await fetchChatDetails(userId, parseInt(page), parseInt(limit));
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+
 module.exports = {
   logingUser,
   createUser,
@@ -434,5 +515,10 @@ module.exports = {
   searchUsersController,
   checkUsernameController,
   createSelfChatMessageController,
-  fetchSelfChatMessagesController
+  fetchSelfChatMessagesController,
+  sendMessageToGroupController,
+  sendMessageToUserController,
+  fetchGroupMessagesController,
+  fetchPrivateMessagesController,
+  fetchUserChat
 };

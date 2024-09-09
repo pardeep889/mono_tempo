@@ -635,13 +635,17 @@ async function checkUsername(username) {
     };
   }
 }
-
 async function createSelfChatMessage(userId, text, attachmentUrl) {
   try {
     // Find or create a self-chat for the user
     let chat = await db.Chat.findOne({ where: { userId, type: 'SELF' } });
     if (!chat) {
+      // Create a new chat if not found
       chat = await db.Chat.create({ userId, type: 'SELF' });
+    } else {
+      // Update the updatedAt timestamp explicitly
+      chat.updatedAt = new Date(); // Manually set updatedAt
+      await chat.save(); // Save the changes
     }
 
     // Create a self-chat message
@@ -698,6 +702,237 @@ async function fetchSelfChatMessages(userId, page = 1, limit = 10) {
   }
 }
 
+async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
+  try {
+
+    // check chat
+    let chat = await db.Chat.findOne({ where: { groupId, type: 'GROUP' } });
+    if (!chat) {
+      chat = await db.Chat.create({ userId: senderId, groupId, type: 'GROUP' });
+    }
+    else {
+      // Update the updatedAt timestamp explicitly
+      chat.updatedAt = new Date(); // Manually set updatedAt
+      await chat.save(); // Save the changes
+    }
+
+    // Check if the group exists
+    const group = await db.Group.findByPk(groupId);
+    if (!group) {
+      return { message: "Group not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Create the message
+    const message = await db.Message.create({
+      text,
+      attachmentUrl,
+      senderId,
+      groupId,
+      isSelfChat: false,
+    });
+
+    // Broadcast the message to all members of the group
+    io.to(groupId).emit('newMessage', message);
+
+    return {
+      message: "Message sent successfully",
+      statusCode: 201,
+      success: true,
+      data: { message },
+    };
+  } catch (error) {
+    console.error("Error sending message to group:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) {
+  try {
+    
+
+        // check chat
+    let chat = await db.Chat.findOne({ where: { receiverId, type: 'PRIVATE' } });
+    if (!chat) {
+      chat = await db.Chat.create({userId: senderId, receiverId, type: 'PRIVATE' });
+    }else {
+      // Update the updatedAt timestamp explicitly
+      chat.updatedAt = new Date(); // Manually set updatedAt
+      await chat.save(); // Save the changes
+    }
+
+
+        
+    // Check if the receiver exists
+    const receiver = await db.User.findByPk(receiverId);
+    if (!receiver) {
+      return { message: "User not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Create the direct message
+    const message = await db.Message.create({
+      text,
+      attachmentUrl,
+      senderId,
+      receiverId,
+      isSelfChat: false,
+    });
+
+    // Broadcast the message to the receiver
+    io.to(receiverId).emit('newMessage', message);
+
+    return {
+      message: "Message sent successfully",
+      statusCode: 201,
+      success: true,
+      data: { message },
+    };
+  } catch (error) {
+    console.error("Error sending message to user:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+async function fetchGroupMessages(groupId, userId, page = 1, limit = 10) {
+  try {
+    // Check if the group exists
+    const group = await db.Group.findByPk(groupId);
+    if (!group) {
+      return { message: "Group not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Fetch all messages from the group with pagination and reversed order
+    const messages = await db.Message.findAll({
+      where: { groupId },
+      include: [
+        {
+          model: db.User,
+          as: 'Sender',
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'],
+        }
+      ],
+      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    return {
+      message: "Messages fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: { messages },
+    };
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function fetchPrivateMessages(userId, otherUserId, page = 1, limit = 10) {
+  try {
+    // Fetch messages where the sender and receiver are either userId or otherUserId
+    const messages = await db.Message.findAll({
+      where: {
+        [Op.or]: [
+          { senderId: userId, receiverId: otherUserId },
+          { senderId: otherUserId, receiverId: userId },
+        ],
+      },
+      include: [
+        {
+          model: db.User,
+          as: 'Sender',
+          attributes: ['id', 'fullName', 'email'],
+        },
+        {
+          model: db.User,
+          as: 'Receiver',
+          attributes: ['id', 'fullName', 'email'],
+        },
+      ],
+      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    return {
+      message: "Messages fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: { messages },
+    };
+  } catch (error) {
+    console.error("Error fetching private messages:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function fetchChatDetails(userId, page, limit) {
+  try {
+    const offset = (page - 1) * limit; // Calculate the offset for pagination
+
+    // Fetch chat records for the provided userId with pagination and ordering
+    const chats = await db.Chat.findAll({
+      where: {
+        [Op.or]: [
+          { userId: userId },
+          { receiverId: userId } // Include chats where the user is the receiver
+        ],
+      },
+      order: [['updatedAt', 'DESC']], // Latest chats first based on updatedAt
+      limit: limit,
+      offset: offset,
+      include: [
+        {
+          model: db.Group,
+          as: 'Group', // Ensure this matches the alias in Chat.associate
+          attributes: ['id', 'name', 'icon'], // Select group details you want to include
+          where: { id: { [Op.ne]: null } }, // Include only if groupId exists
+          required: false, // Do not filter out chats without a group
+        },
+        {
+          model: db.User,
+          as: 'sender', // Include the sender details
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'], // Use existing fields in User model
+          required: false, // Do not filter out chats without a sender
+        },
+        {
+          model: db.User,
+          as: 'receiver', // Correct alias (case-sensitive)
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'], // Use existing fields in User model
+          required: false, // Do not filter out chats without a receiver
+        },
+      ],
+    });
+
+    // Get total count for pagination metadata
+    const totalChats = await db.Chat.count({
+      where: {
+        [Op.or]: [
+          { userId: userId },
+          { receiverId: userId } // Include chats where the user is the receiver
+        ],
+      },
+    });
+
+    const totalPages = Math.ceil(totalChats / limit); // Calculate total pages
+
+    return {
+      message: "Chat records fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: {
+        chats,
+        pagination: {
+          currentPage: page,
+          totalPages: totalPages,
+          totalChats: totalChats,
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching chat details:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
 
 module.exports = {
   userLogin: userLogin,
@@ -717,5 +952,10 @@ module.exports = {
   searchUsers: searchUsers,
   checkUsername: checkUsername,
   fetchSelfChatMessages: fetchSelfChatMessages,
-  createSelfChatMessage: createSelfChatMessage
+  createSelfChatMessage: createSelfChatMessage,
+  sendMessageToGroup: sendMessageToGroup,
+  sendMessageToUser: sendMessageToUser,
+  fetchGroupMessages: fetchGroupMessages,
+  fetchPrivateMessages: fetchPrivateMessages,
+  fetchChatDetails: fetchChatDetails
 };

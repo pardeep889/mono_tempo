@@ -1,30 +1,40 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const app = express();
 const routes = require('./startup/router');
-const db = require('../sequelize/models')
+const db = require('../sequelize/models');
 
-app.use(cors());
-app.use(cookieParser());
-app.use(express.json());
+const appFactory = (io) => {
+    const app = express();
 
-(async () => {
-    try {
-      const eraseDatabaseOnSync = false;
-      const alterDatabaseOnSync = true;
-      await db.sequelize.sync({ alter: alterDatabaseOnSync, force: eraseDatabaseOnSync });
-  
-    }
-    catch (e) {
-      console.log('error while syncing with database', e);
-    }
-  })();
+    app.use(cors());
+    app.use(cookieParser());
+    app.use(express.json());
 
-app.use(routes);
-app.use((err,req,res,next)=>{
-res.status(500).send();
-next(err);
-});
+    // Sync with database
+    (async () => {
+        try {
+            const eraseDatabaseOnSync = false;
+            const alterDatabaseOnSync = true;
+            await db.sequelize.sync({ alter: alterDatabaseOnSync, force: eraseDatabaseOnSync });
+        } catch (e) {
+            console.log('Error while syncing with database', e);
+        }
+    })();
 
-module.exports = app;
+    // Middleware to attach `io` instance to the app
+    app.set('io', io);
+
+    // Use routes
+    app.use(routes);
+
+    // Error handling middleware
+    app.use((err, req, res, next) => {
+        res.status(500).send();
+        next(err);
+    });
+
+    return app;
+};
+
+module.exports = appFactory;

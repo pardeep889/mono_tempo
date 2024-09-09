@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        #chatContainer {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #messageList {
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #messageList li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        #messageList li.incoming {
+            background-color: #d1e7dd;
+        }
+        #messageForm {
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #sendButton {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chatContainer">
+    <h2>Direct Message</h2>
+    <ul id="messageList">
+        <!-- Messages will be appended here -->
+    </ul>
+    <form id="messageForm">
+        <input type="text" id="messageInput" placeholder="Type your message here" required>
+        <button type="submit" id="sendButton">Send</button>
+    </form>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+ const socket = io({
+         withCredentials: true,
+         transports: ['websocket', 'polling']
+     });
+    
+    const senderId = 1; // Your sender user ID
+    const receiverId = 2; // The receiver user ID
+    const apiUrl = `http://localhost:3000/api/user/direct-messages`;
+    const token = 'YOUR_AUTH_TOKEN'; // Replace with your authentication token
+
+    const messageList = document.getElementById('messageList');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+
+    // Join the user's own room
+    socket.emit('joinUserRoom', senderId);
+
+    // Listen for new messages
+    socket.on('newMessage', (message) => {
+        displayMessage(message, 'incoming');
+    });
+
+    // Handle message form submission
+    messageForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const text = messageInput.value.trim();
+
+        if (text) {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ senderId, receiverId, text }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                socket.emit("send-message-to-user", data.data.message);
+                displayMessage(data.data.message, 'outgoing');
+                messageInput.value = '';
+            } else {
+                alert('Failed to send message: ' + data.message);
+            }
+        }
+    });
+
+    // Function to display messages in the chat
+    function displayMessage(message, type) {
+        const messageElement = document.createElement('li');
+        messageElement.textContent = `${message.senderId}: ${message.text}`;
+        messageElement.className = type;
+        messageList.appendChild(messageElement);
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+</script>
+
+</body>
+</html>

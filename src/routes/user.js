@@ -90,8 +90,20 @@ router.get('/group/:groupId', authenticateJWT, groupController.getGroupDetailsCo
 router.get('/groups/search', authenticateJWT, groupController.searchGroupsController);
 
 
-// Chat Routes 
+// Chat Routes
 router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);
 router.get('/self-chat', authenticateJWT, userController.fetchSelfChatMessagesController);
+
+// Group Chat 
+router.post('/groups/:groupId/messages', authenticateJWT, userController.sendMessageToGroupController);
+router.get('/groups/:groupId/messages', authenticateJWT, userController.fetchGroupMessagesController);
+
+// Private Chat
+router.post('/send-message/:receiverId', authenticateJWT, userController.sendMessageToUserController);
+router.get('/private-messages/:otherUserId', authenticateJWT, userController.fetchPrivateMessagesController);
+
+// Fetch Chat
+router.get('/chat/', authenticateJWT, userController.fetchUserChat);
+
 
 module.exports = router;

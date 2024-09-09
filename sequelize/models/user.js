@@ -33,6 +33,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         otherKey: 'groupId',
       });
+      this.hasMany(models.Chat, { as: 'sentMessages', foreignKey: 'userId' });
+
+      // Messages received by the user
+      this.hasMany(models.Chat, { as: 'receivedMessages', foreignKey: 'receiverId' });
+  
 
     }
   }
