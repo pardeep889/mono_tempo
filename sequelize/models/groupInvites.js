@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     // Associations
     GroupInvite.associate = function (models) {
       GroupInvite.belongsTo(models.User, { foreignKey: 'invitedUserId', as: 'invitedUser' });
-      GroupInvite.belongsTo(models.Group, { foreignKey: 'groupId' });
+      GroupInvite.belongsTo(models.Group, {  as: 'group', foreignKey: 'groupId' });
       GroupInvite.belongsTo(models.User, { foreignKey: 'invitedBy', as: 'inviter' });
     };
   

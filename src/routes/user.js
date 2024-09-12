@@ -3,6 +3,7 @@ const router = require('express').Router();
 const { verifyRefreshToken, authenticateJWT } = require('../middleware/auth');
 const userController = require("../modules/User/controllers/user")
 const groupController = require('../modules/User/controllers/groupController');
+const deviceController = require('../modules/User/controllers/deviceController');
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -93,17 +94,23 @@ router.get('/groups/search', authenticateJWT, groupController.searchGroupsContro
 // Chat Routes
 router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);
 router.get('/self-chat', authenticateJWT, userController.fetchSelfChatMessagesController);
-
 // Group Chat 
 router.post('/groups/:groupId/messages', authenticateJWT, userController.sendMessageToGroupController);
 router.get('/groups/:groupId/messages', authenticateJWT, userController.fetchGroupMessagesController);
-
 // Private Chat
 router.post('/send-message/:receiverId', authenticateJWT, userController.sendMessageToUserController);
 router.get('/private-messages/:otherUserId', authenticateJWT, userController.fetchPrivateMessagesController);
-
 // Fetch Chat
 router.get('/chat/', authenticateJWT, userController.fetchUserChat);
 
+
+// Devices Routes 
+router.post('/devices/register', authenticateJWT, deviceController.registerDeviceController);
+// Update device information (e.g., FCM token)
+router.put('/devices/update/:id', authenticateJWT, deviceController.updateDeviceController);
+// Fetch all devices of the authenticated user
+router.get('/devices/my-devices', authenticateJWT, deviceController.fetchUserDevicesController);
+// Delete a device (Unregister)
+router.delete('/devices/delete/:id', authenticateJWT, deviceController.deleteDeviceController);
 
 module.exports = router;

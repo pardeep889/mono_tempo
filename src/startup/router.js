@@ -7,6 +7,7 @@ const reviewRoute = require("../routes/review");
 const paymentsRoute = require("../routes/payments");
 const userRoute = require("../routes/user");
 const adminRoute = require("../routes/admin")
+const notificationRoute = require("../routes/notification");
 
 // user authentication Routes
 router.use("/user", userRoute);
@@ -21,6 +22,8 @@ router.use("/review", reviewRoute);
 router.use("/review", reviewRoute);
 router.use("/payment",paymentsRoute)
 router.use("/admin",adminRoute)
+router.use("/notification",notificationRoute)
+
 
 
 

@@ -270,12 +270,13 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         include: [
           {
             model: db.Group,
-            attributes: ['id', 'name'] // Include related group information
+            as: 'group', // Alias 'Group' as 'group'
+            attributes: ['id', 'name', 'icon'] // Include related group information
           },
           {
             model: db.User,
             as: 'inviter',
-            attributes: ['id', 'username', 'email'] // Include inviter information
+            attributes: ['id', 'username', 'profileImageUrl'] // Include inviter information
           }
         ]
       });
