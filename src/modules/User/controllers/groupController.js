@@ -1,5 +1,6 @@
 // groupController.js
 
+const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
@@ -40,7 +41,8 @@ const inviteUserToGroupController = async (req, res) => {
   const { groupId } = req.params;
   const { userId } = req.body; // ID of the user to invite
   const adminId = req.user.userId; // ID of the current user (admin)
-  
+  // sendNotificationToUser(adminId, userId, "Group Invite", "You have been Invited to Group Name by Username","invite", groupId);
+
   const { message, success, statusCode } = await inviteUserToGroup(groupId, adminId, userId);
   
   return res.status(statusCode).json({

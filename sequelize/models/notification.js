@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       type: {
         type: DataTypes.ENUM,
-        values: ['like', 'comment', 'follow', 'message' , 'other'],
+        values: ['like','invite', 'comment', 'follow', 'message' , 'other'],
         allowNull: false,
       },
       title: {

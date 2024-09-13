@@ -1,8 +1,62 @@
 const db = require("../../../../sequelize/models");
+const admin = require("../../../util/firebase");
+
+
+// Function to send push notification
+const sendPushNotification = async(title, message , type,  receiverId , referenceId) => {
+  console.log("Notification Data to be send is: ", title, message , type, receiverId,  referenceId);
+  const userDevices = await fetchUserDevices(receiverId);
+
+  userDevices.forEach(device => {
+    const fcmToken = device.dataValues.fcmToken;
+    const data =  {
+      type,
+      referenceId
+    }
+
+    const sanitizedData = {};
+    for (let key in data) {
+      sanitizedData[key] = String(data[key]); // Ensure each value is a string
+    }
+    const payload = {
+      notification: {
+        title: title,
+        body: message
+      },
+      data: sanitizedData || null,
+      token: fcmToken
+    };
+
+    admin.messaging().send(payload)
+      .then(response => {
+        console.log('Successfully sent message:', response);
+      })
+      .catch(error => {
+        console.log('Error sending message:', error);
+      });
+  });
+  
+};
+
+const fetchUserDevices = async (receiverId) => {
+  const userDevices = await db.Device.findAll({
+    where: { userId: receiverId },
+    attributes: ['fcmToken']
+  });
+
+  return userDevices;
+}
+
+
 
 // Create a notification
 async function createNotification(senderId, receiverId, title , message, type, referenceId) {
+  
   try {
+    
+
+    sendPushNotification(title, message, type, receiverId, referenceId); // Send notification
+    
     const notification = await db.Notification.create({
       senderId, receiverId, title , message, type, referenceId,
       isRead: false // Notifications are unread by default
@@ -100,9 +154,27 @@ async function deleteNotification(userId, notificationId) {
   }
 }
 
+async function sendNotificationToUser(senderId, receiverId, title , message, type, referenceId) {
+  try {
+    sendPushNotification(title, message, type, receiverId, referenceId); // Send notification
+    
+   await db.Notification.create({
+      senderId, receiverId, title , message, type, referenceId,
+      isRead: false // Notifications are unread by default
+    });
+
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
 module.exports = {
   createNotification,
   listNotifications,
   markAsRead,
-  deleteNotification
+  deleteNotification,
+  sendPushNotification,
+  sendNotificationToUser
 };

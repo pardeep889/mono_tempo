@@ -282,7 +282,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       });
   
       if (!invites || invites.length === 0) {
-        return { message: "No invites found", statusCode: 404, success: false , data: null};
+        return { message: "No invites found", statusCode: 200, success: true , data: null};
       }
   
       return { data: invites, statusCode: 200, success: true , message: "Invites Fetched Successfully"};
