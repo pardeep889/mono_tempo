@@ -83,13 +83,15 @@ async function userLogin(email, password) {
       userId: user.id,
       email: user.email,
       role: user.role,
-      uid: user.uid
+      uid: user.uid,
+      fullName: user.fullName
     });
     const refreshToken = generateRefreshToken({
       userId: user.id,
       email: user.email,
       role: user.role,
-      uid: user.uid
+      uid: user.uid,
+      fullName: user.fullName
     });
 
     return {
@@ -99,6 +101,7 @@ async function userLogin(email, password) {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          fullName: user.fullName,
           accountStatus: user.accountStatus,
           stripeCustomerId: user.stripeCustomerId,
           isSubscribed: user.isSubscribed,

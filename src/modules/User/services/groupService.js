@@ -159,7 +159,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       });
   
       if (!groupAdmin) {
-        return { message: "Only group admins can invite users", statusCode: 403, success: false };
+        return { message: "Only group admins can invite users", statusCode: 403, success: false, data: null };
       }
   
       // Check if the user is already invited
@@ -168,7 +168,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       });
   
       if (existingInvite) {
-        return { message: "User is already invited to this group", statusCode: 400, success: false };
+        return { message: "User is already invited to this group", statusCode: 400, success: false ,data: null};
       }
   
       // Create an invite
@@ -178,10 +178,10 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         invitedBy: adminId
       });
   
-      return { message: "User invited successfully", statusCode: 200, success: true };
+      return { message: "User invited successfully", statusCode: 200, success: true , data: null};
     } catch (error) {
       console.error("Error inviting user to group:", error);
-      return { message: "Internal Server Error", statusCode: 500, success: false };
+      return { message: "Internal Server Error", statusCode: 500, success: false , data: null};
     }
   }
   async function acceptGroupInvite(groupId, invitedUserId) {

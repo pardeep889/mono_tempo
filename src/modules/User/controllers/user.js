@@ -1,3 +1,5 @@
+const { sendNotificationToUser } = require("../../Notification/services/notificationService");
+const { fetchUserDetailsUtilService } = require("../../util/util");
 const {
   userLogin,
   userCreate,
@@ -267,6 +269,7 @@ const fetchUserByIdController = async (req, res) => {
 const followUser = async (req, res) => {
   const { userId } = req.body;
   const followerId = req.user.userId;
+  const fullName = req.user.fullName;
 
   if (userId === followerId) {
     return res.status(400).json({
@@ -284,6 +287,9 @@ const followUser = async (req, res) => {
   }
   
   const { message, success, statusCode, data } = await followUserService(followerId, userId);
+  if(success){
+    sendNotificationToUser(followerId, userId, `You have a new follower` , `${fullName} followed you.` ,"follow", followerId);
+  }
   return res.status(statusCode).json({
     success,
     message,
@@ -440,7 +446,9 @@ async function sendMessageToUserController(req, res) {
   const { receiverId } = req.params;  // Change groupId to receiverId
   const { text, attachmentUrl } = req.body;
   const senderId = req.user.userId;  // Sender user ID from authenticated user
+  const fullName = req.user.fullName;
 
+  sendNotificationToUser(senderId, receiverId, `New Private Message from ${fullName}` , text ,"private-message", senderId);
   // Call sendMessageToUser with the correct parameters: senderId, receiverId, text, attachmentUrl
   const { message, statusCode, success, data } = await sendMessageToUser(senderId, receiverId, text, attachmentUrl, req.app.get('io'));
 

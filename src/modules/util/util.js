@@ -1,3 +1,6 @@
+const db = require("../../../sequelize/models");
+
+
 
 function generateRandomCodeString(length) {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -30,4 +33,22 @@ function getFormattedDate() {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${microseconds}`;
 }
 
-module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate};
+
+const fetchGroupDetailsUtilService = async (groupId) => {
+  const group = await db.Group.findOne({
+    where: { id: groupId },
+    attributes: ['id', 'name'] // Only select id and name
+  });
+  return group.dataValues;
+}
+
+const fetchUserDetailsUtilService = async (userId) => {
+  const user = await db.User.findOne({
+    where: { id: userId },
+    attributes: ['id', 'fullName'] // Only select id and name
+  });
+  return user.dataValues;
+}
+
+
+module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate, fetchGroupDetailsUtilService, fetchUserDetailsUtilService};
