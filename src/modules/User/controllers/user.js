@@ -1,5 +1,5 @@
 const { sendNotificationToUser } = require("../../Notification/services/notificationService");
-const { fetchUserDetailsUtilService } = require("../../util/util");
+const { fetchGroupDetailsUtilService, fetchGroupUsersUtilService } = require("../../util/util");
 const {
   userLogin,
   userCreate,
@@ -431,10 +431,19 @@ async function sendMessageToGroupController(req, res) {
   const { groupId } = req.params;
   const { text, attachmentUrl } = req.body;
   const senderId = req.user.userId;
-  
+  const fullName = req.user.fullName;
 
   const { message, statusCode, success, data } = await sendMessageToGroup(groupId, senderId, text, attachmentUrl, req.app.get('io'));
 
+  if(success){
+    setImmediate(async () => {
+      const users = await fetchGroupUsersUtilService(groupId);
+      const groupDetail = await fetchGroupDetailsUtilService(groupId);
+      users.forEach(user => {
+        sendNotificationToUser(senderId, user['User.id'], `New Group Message from ${fullName} in ${groupDetail.name}`, text, "group-message", senderId);
+      });
+    });
+  }
   return res.status(statusCode).json({
     success,
     message,

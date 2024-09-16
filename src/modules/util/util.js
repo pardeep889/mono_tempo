@@ -51,4 +51,31 @@ const fetchUserDetailsUtilService = async (userId) => {
 }
 
 
-module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate, fetchGroupDetailsUtilService, fetchUserDetailsUtilService};
+async function fetchGroupUsersUtilService(groupId) {
+  try {
+    // Directly query for user IDs from the database
+    const users = await db.GroupMembership.findAll({
+      where: { groupId },
+      include: [
+        {
+          model: db.User,
+          attributes: ['id'], // Fetch only the user id
+        }
+      ],
+      attributes: [], // We don't need any attributes from GroupMembership
+      raw: true // Get raw results from Sequelize
+    });
+
+    // If no users found, return an empty array
+    if (!users.length) {
+      return [];
+    }
+    return users;
+  } catch (error) {
+    console.error("Error fetching group users:", error);
+    return [];
+  }
+}
+
+
+module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate, fetchGroupDetailsUtilService, fetchUserDetailsUtilService, fetchGroupUsersUtilService};

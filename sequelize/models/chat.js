@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
     Chat.belongsTo(models.User, { as: 'receiver', foreignKey: 'receiverId' });
 
     // Group association (if the chat is in a group)
-    Chat.belongsTo(models.Group, { as: 'Group', foreignKey: 'groupId' });
+    Chat.belongsTo(models.Group, { as: 'group', foreignKey: 'groupId' });
   };
 
   return Chat;

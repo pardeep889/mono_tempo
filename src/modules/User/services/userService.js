@@ -886,7 +886,7 @@ async function fetchChatDetails(userId, page, limit) {
       include: [
         {
           model: db.Group,
-          as: 'Group', // Ensure this matches the alias in Chat.associate
+          as: 'group', // Ensure this matches the alias in Chat.associate
           attributes: ['id', 'name', 'icon'], // Select group details you want to include
           where: { id: { [Op.ne]: null } }, // Include only if groupId exists
           required: false, // Do not filter out chats without a group
