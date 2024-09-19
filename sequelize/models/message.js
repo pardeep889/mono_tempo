@@ -41,6 +41,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false, // Flag to indicate if the message is a self-chat
       },
+      chatId: {
+        type: DataTypes.INTEGER,
+        allowNull: false, // Every message belongs to a chat
+        references: {
+          model: 'Chats',
+          key: 'id',
+        },
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

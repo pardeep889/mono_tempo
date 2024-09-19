@@ -35,6 +35,18 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false, // Foreign key to the User model
       },
+      name: {
+        type: DataTypes.STRING(255),
+        allowNull: true, // This allows null values for the name
+      },
+      location: {
+        type: DataTypes.JSON, // Using JSON to store location as an object (latitude, longitude, etc.)
+        allowNull: true,
+      },
+      ip: {
+        type: DataTypes.STRING(255), // Storing IP address as a string
+        allowNull: true,
+      },
       createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,

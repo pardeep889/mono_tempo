@@ -657,6 +657,7 @@ async function createSelfChatMessage(userId, text, attachmentUrl) {
       attachmentUrl,
       senderId: userId,
       isSelfChat: true,
+      chatId: chat.id
     });
 
     return {
@@ -732,6 +733,7 @@ async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
       senderId,
       groupId,
       isSelfChat: false,
+      chatId: chat.id
     });
 
     // Broadcast the message to all members of the group
@@ -778,6 +780,7 @@ async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) 
       senderId,
       receiverId,
       isSelfChat: false,
+      chatId: chat.id
     });
 
     // Broadcast the message to the receiver
@@ -903,6 +906,15 @@ async function fetchChatDetails(userId, page, limit) {
           attributes: ['id', 'fullName', 'email', 'profileImageUrl'], // Use existing fields in User model
           required: false, // Do not filter out chats without a receiver
         },
+        {
+          model: db.Message,
+          as: 'latestMessage', // Fetch the latest message for each chat
+          attributes: ['text', 'senderId'], // Include the fields you need
+          order: [['createdAt', 'DESC']], // Ensure it's the latest message
+          limit: 1, // Only fetch the latest message
+          required: false, // Do not filter out chats without messages
+          // separate: true, // Fetch separately to avoid issues with HasMany association
+        }
       ],
     });
 

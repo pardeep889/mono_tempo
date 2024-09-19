@@ -151,8 +151,9 @@ async function removeUserFromGroup(req, res) {
 
 async function getGroupDetailsController(req, res) {
   const { groupId } = req.params;
+  const userId = req.user.userId;
 
-  const { message, statusCode, success, data } = await getGroupDetails(groupId);
+  const { message, statusCode, success, data } = await getGroupDetails(groupId, userId);
 
   return res.status(statusCode).json({
     success,

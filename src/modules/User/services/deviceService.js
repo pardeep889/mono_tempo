@@ -1,7 +1,7 @@
 const db = require("../../../../sequelize/models");
 
 // Register or update a device
-async function registerDevice(userId, deviceId, fcmToken, deviceType) {
+async function registerDevice(userId, deviceId, fcmToken, deviceType, name, location, userIp) {
   try {
     let device = await db.Device.findOne({ where: { userId, deviceId } });
 
@@ -11,7 +11,10 @@ async function registerDevice(userId, deviceId, fcmToken, deviceType) {
         userId,
         deviceId,
         fcmToken,
-        deviceType
+        deviceType,
+        name,
+        location, 
+        ip: userIp
       });
 
       return {

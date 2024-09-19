@@ -443,29 +443,46 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     }
   }
 
-  async function getGroupDetails(groupId) {
+  async function getGroupDetails(groupId, userId) {
     try {
       // Fetch group details
       const group = await db.Group.findOne({
         where: { id: groupId },
-        attributes: ['id', 'name', 'description', 'icon', 'type', 'creatorId', 'createdAt']
+        attributes: ['id', 'name', 'description', 'icon', 'type', 'creatorId', 'createdAt'],
       });
   
       if (!group) {
         return { message: "Group not found", statusCode: 404, success: false, data: null };
       }
   
+      // Check if the user is a member/admin of the group
+      const groupMembership = await db.GroupMembership.findOne({
+        where: {
+          groupId: groupId,
+          userId: userId,
+        },
+        attributes: ['role'], // Only need to fetch the role field
+      });
+  
+      if (!groupMembership) {
+        return { message: "User has no permission for this group", statusCode: 403, success: false, data: null };
+      }
+  
       return {
         message: "Group details fetched successfully",
         statusCode: 200,
         success: true,
-        data: group
+        data: {
+          group,
+          role: groupMembership.role, // Add the user's role to the response
+        },
       };
     } catch (error) {
       console.error("Error fetching group details:", error);
       return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
     }
   }
+  
   
   async function searchGroups(name, page = 1, limit = 10) {
     try {

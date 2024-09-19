@@ -1,11 +1,24 @@
+const { getGeoLocation } = require("../../util/util");
 const deviceService = require("../services/deviceService");
+
 
 // Register a new device (or update FCM token if device already exists)
 async function registerDeviceController(req, res) {
-  const { deviceId, fcmToken, deviceType } = req.body;
+  const { deviceId, fcmToken, deviceType, name } = req.body;
   const userId = req.user.userId;
+  let userIp = req.headers['x-forwarded-for'] || req.ip;
+  if (userIp === '::1') {
+    userIp = '127.0.0.1'; // Convert IPv6 localhost to IPv4 localhost
+  }
+  let location = null;
 
-  const { message, statusCode, success, data } = await deviceService.registerDevice(userId, deviceId, fcmToken, deviceType);
+  const geolocation = await getGeoLocation(userIp);
+
+  if(geolocation.status === 'success'){
+    location = geolocation;
+  }
+
+  const { message, statusCode, success, data } = await deviceService.registerDevice(userId, deviceId, fcmToken, deviceType, name,location, userIp);
 
   return res.status(statusCode).json({
     success,

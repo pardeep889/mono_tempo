@@ -4,6 +4,7 @@ const { verifyRefreshToken, authenticateJWT } = require('../middleware/auth');
 const userController = require("../modules/User/controllers/user")
 const groupController = require('../modules/User/controllers/groupController');
 const deviceController = require('../modules/User/controllers/deviceController');
+const billboardController = require('../modules/User/controllers/billboardController');
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -113,4 +114,11 @@ router.get('/devices/my-devices', authenticateJWT, deviceController.fetchUserDev
 // Delete a device (Unregister)
 router.delete('/devices/delete/:id', authenticateJWT, deviceController.deleteDeviceController);
 
+
+// Bill Board 
+router.post('/billboard/create', authenticateJWT, billboardController.createBillboard);
+router.delete('/billboard/delete/:billboardId', authenticateJWT, billboardController.deleteBillboardController);
+router.put('/billboard/update/:billboardId',authenticateJWT, billboardController.updateBillboardController);
+router.get('/billboard/fetch/:chatId',authenticateJWT, billboardController.fetchBillboardsController);
+router.delete('/billboard/delete-all/:chatId', authenticateJWT, billboardController.deleteBillboardsController);
 module.exports = router;

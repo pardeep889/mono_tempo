@@ -1,4 +1,15 @@
+const axios = require('axios');
 const db = require("../../../sequelize/models");
+
+async function getGeoLocation(ip) {
+  try {
+    const response = await axios.get(`http://ip-api.com/json/${ip}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching geolocation:", error);
+    return null;
+  }
+}
 
 
 
@@ -78,4 +89,4 @@ async function fetchGroupUsersUtilService(groupId) {
 }
 
 
-module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate, fetchGroupDetailsUtilService, fetchUserDetailsUtilService, fetchGroupUsersUtilService};
+module.exports = {generateRandomCodeNumber8Digit, generateRandomCodeString, getFormattedDate, fetchGroupDetailsUtilService, fetchUserDetailsUtilService, fetchGroupUsersUtilService, getGeoLocation};

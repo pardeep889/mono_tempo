@@ -57,6 +57,7 @@ module.exports = (sequelize, DataTypes) => {
 
     // Group association (if the chat is in a group)
     Chat.belongsTo(models.Group, { as: 'group', foreignKey: 'groupId' });
+    Chat.hasMany(models.Message, { foreignKey: 'chatId', as: 'latestMessage' });
   };
 
   return Chat;
