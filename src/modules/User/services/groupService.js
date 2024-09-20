@@ -449,6 +449,13 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       const group = await db.Group.findOne({
         where: { id: groupId },
         attributes: ['id', 'name', 'description', 'icon', 'type', 'creatorId', 'createdAt'],
+        include: [
+          {
+            model: db.User,
+            as: 'creator', // The alias defined in your Group model
+            attributes: ['id', 'fullName', 'username', 'profileImageUrl'], // Specify the fields you want from the User model
+          },
+        ],
       });
   
       if (!group) {
@@ -467,6 +474,27 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       if (!groupMembership) {
         return { message: "User has no permission for this group", statusCode: 403, success: false, data: null };
       }
+
+      const totalUsers = await db.GroupMembership.count({
+        where: { groupId },
+      });
+  
+      // Count total number of admins
+      const totalAdmins = await db.GroupMembership.count({
+        where: {
+          groupId,
+          role: 'ADMIN', // Assuming 'ADMIN' is the role you use for admins
+        },
+      });
+  
+      // Count total number of members
+      const totalMembers = await db.GroupMembership.count({
+        where: {
+          groupId,
+          role: 'MEMBER', // Assuming 'MEMBER' is the role you use for members
+        },
+      });
+  
   
       return {
         message: "Group details fetched successfully",
@@ -474,7 +502,12 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         success: true,
         data: {
           group,
-          role: groupMembership.role, // Add the user's role to the response
+          role: groupMembership.role,
+          stats: {
+            totalUsers,
+            totalAdmins,
+            totalMembers,
+          }, 
         },
       };
     } catch (error) {
@@ -517,6 +550,70 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
     }
   }
+
+  async function togglePinMessageGroup(groupId, messageId, userId) {
+    try {
+      // Check if the user is an admin in the group
+      const userMembership = await db.GroupMembership.findOne({
+        where: {
+          groupId: groupId,
+          userId: userId,
+          role: 'ADMIN', // Assuming 'ADMIN' is the role for admins
+        },
+      });
+  
+      if (!userMembership) {
+        return { message: 'User does not have permission to pin/unpin messages', statusCode: 403, success: false, data: null };
+      }
+  
+      // Check if the message exists and belongs to the correct group
+      const message = await db.Message.findOne({
+        where: {
+          id: messageId,
+          groupId: groupId
+        },
+      });
+  
+      if (!message) {
+        return { message: 'Message not found', statusCode: 404, success: false, data: null };
+      }
+  
+      // Check if the message is already pinned
+      if (message.isPinned) {
+        // Unpin the message
+        message.isPinned = false;
+        await message.save();
+  
+        return {
+          message: 'Message unpinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      } else {
+        // Unpin any previously pinned message in the group
+        await db.Message.update(
+          { isPinned: false },
+          { where: { chatId: groupId, isPinned: true } }
+        );
+  
+        // Pin the selected message
+        message.isPinned = true;
+        await message.save();
+  
+        return {
+          message: 'Message pinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      }
+    } catch (error) {
+      console.error('Error pinning/unpinning message:', error);
+      return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+    }
+  }
+  
   
   module.exports = {
     createGroup,
@@ -531,5 +628,6 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     fetchGroupUsers,
     removeUserFromGroupService,
     getGroupDetails,
-    searchGroups
+    searchGroups,
+    togglePinMessageGroup
   };

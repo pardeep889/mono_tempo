@@ -646,9 +646,8 @@ async function createSelfChatMessage(userId, text, attachmentUrl) {
       // Create a new chat if not found
       chat = await db.Chat.create({ userId, type: 'SELF' });
     } else {
-      // Update the updatedAt timestamp explicitly
-      chat.updatedAt = new Date(); // Manually set updatedAt
-      await chat.save(); // Save the changes
+      chat.count = chat.count + 1; // Or any other minor field you can update
+      await chat.save();
     }
 
     // Create a self-chat message
@@ -715,9 +714,8 @@ async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
       chat = await db.Chat.create({ userId: senderId, groupId, type: 'GROUP' });
     }
     else {
-      // Update the updatedAt timestamp explicitly
-      chat.updatedAt = new Date(); // Manually set updatedAt
-      await chat.save(); // Save the changes
+      chat.count = chat.count + 1; // Or any other minor field you can update
+      await chat.save();
     }
 
     // Check if the group exists
@@ -760,9 +758,8 @@ async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) 
     if (!chat) {
       chat = await db.Chat.create({userId: senderId, receiverId, type: 'PRIVATE' });
     }else {
-      // Update the updatedAt timestamp explicitly
-      chat.updatedAt = new Date(); // Manually set updatedAt
-      await chat.save(); // Save the changes
+      chat.count = chat.count + 1;
+      await chat.save();
     }
 
 
@@ -949,6 +946,42 @@ async function fetchChatDetails(userId, page, limit) {
   }
 }
 
+
+async function fetchPinnedGroupMessages(groupId, userId, page = 1, limit = 10) {
+  try {
+    // Check if the group exists
+    const group = await db.Group.findByPk(groupId);
+    if (!group) {
+      return { message: "Group not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Fetch all messages from the group with pagination and reversed order
+    const messages = await db.Message.findAll({
+      where: { groupId, isPinned: true },
+      include: [
+        {
+          model: db.User,
+          as: 'Sender',
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'],
+        }
+      ],
+      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    return {
+      message: "Messages fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: { messages },
+    };
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -972,5 +1005,6 @@ module.exports = {
   sendMessageToUser: sendMessageToUser,
   fetchGroupMessages: fetchGroupMessages,
   fetchPrivateMessages: fetchPrivateMessages,
-  fetchChatDetails: fetchChatDetails
+  fetchChatDetails: fetchChatDetails,
+  fetchPinnedGroupMessages: fetchPinnedGroupMessages
 };

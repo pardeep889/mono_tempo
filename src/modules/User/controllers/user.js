@@ -24,6 +24,7 @@ const {
   fetchGroupMessages,
   fetchPrivateMessages,
   fetchChatDetails,
+  fetchPinnedGroupMessages,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -514,6 +515,21 @@ async function fetchUserChat(req, res) {
 }
 
 
+async function fetchPinnedGroupMessagesController(req, res) {
+  const { groupId } = req.params;
+  const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
+  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
+
+  const { message, statusCode, success, data } = await fetchPinnedGroupMessages(groupId, userId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
 module.exports = {
   logingUser,
   createUser,
@@ -537,5 +553,6 @@ module.exports = {
   sendMessageToUserController,
   fetchGroupMessagesController,
   fetchPrivateMessagesController,
-  fetchUserChat
+  fetchUserChat,
+  fetchPinnedGroupMessagesController
 };

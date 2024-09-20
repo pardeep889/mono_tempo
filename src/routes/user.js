@@ -98,11 +98,15 @@ router.get('/self-chat', authenticateJWT, userController.fetchSelfChatMessagesCo
 // Group Chat 
 router.post('/groups/:groupId/messages', authenticateJWT, userController.sendMessageToGroupController);
 router.get('/groups/:groupId/messages', authenticateJWT, userController.fetchGroupMessagesController);
+router.get('/groups/:groupId/pinned-messages', authenticateJWT, userController.fetchPinnedGroupMessagesController);
+
 // Private Chat
 router.post('/send-message/:receiverId', authenticateJWT, userController.sendMessageToUserController);
 router.get('/private-messages/:otherUserId', authenticateJWT, userController.fetchPrivateMessagesController);
 // Fetch Chat
 router.get('/chat/', authenticateJWT, userController.fetchUserChat);
+router.post('/group/pin-message', authenticateJWT, groupController.pinUnpinGroupMessage);
+
 
 
 // Devices Routes 

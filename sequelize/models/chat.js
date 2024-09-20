@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id',
       },
     },
+    count: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,

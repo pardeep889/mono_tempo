@@ -49,6 +49,10 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      isPinned: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
