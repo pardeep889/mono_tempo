@@ -927,12 +927,28 @@ async function fetchChatDetails(userId, page, limit) {
   try {
     const offset = (page - 1) * limit; // Calculate the offset for pagination
 
-    // Fetch chat records for the provided userId with pagination and ordering
+    // Fetch group IDs where the user is a member or an admin
+    const userGroupMemberships = await db.GroupMembership.findAll({
+      where: {
+        userId: userId,
+        role: {
+          [Op.in]: ["ADMIN", "MEMBER"], // The user must be an admin or a member
+        },
+      },
+      attributes: ['groupId'],
+    });
+
+    const userGroupIds = userGroupMemberships.map(membership => membership.groupId); // Extract group IDs
+
+    // Fetch chat records for the provided userId (including group chats)
     const chats = await db.Chat.findAll({
       where: {
         [Op.or]: [
+          // One-on-one chats
           { userId: userId },
-          { receiverId: userId } // Include chats where the user is the receiver
+          { receiverId: userId },
+          // Group chats where the user is a member or an admin
+          { groupId: { [Op.in]: userGroupIds } },
         ],
       },
       order: [['updatedAt', 'DESC']], // Latest chats first based on updatedAt
@@ -965,7 +981,6 @@ async function fetchChatDetails(userId, page, limit) {
           order: [['createdAt', 'DESC']], // Ensure it's the latest message
           limit: 1, // Only fetch the latest message
           required: false, // Do not filter out chats without messages
-          // separate: true, // Fetch separately to avoid issues with HasMany association
         }
       ],
     });
@@ -974,8 +989,11 @@ async function fetchChatDetails(userId, page, limit) {
     const totalChats = await db.Chat.count({
       where: {
         [Op.or]: [
+          // One-on-one chats
           { userId: userId },
-          { receiverId: userId } // Include chats where the user is the receiver
+          { receiverId: userId },
+          // Group chats where the user is a member or an admin
+          { groupId: { [Op.in]: userGroupIds } },
         ],
       },
     });
