@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -186,8 +186,31 @@ async function pinUnpinGroupMessage(req, res) {
     data
   });
 }
+async function pinUnpinPrivateMessage(req, res) {
+  const {messageId } = req.body;
+  const { userId } = req.user;
 
+  const { message, statusCode, success, data } = await togglePrivatePinnedMessage(messageId, userId)
 
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+}
+
+async function pinUnpinSelfMessage(req, res) {
+  const {messageId } = req.body;
+  const { userId } = req.user;
+
+  const { message, statusCode, success, data } = await toggleSelfPinnedMessage(messageId, userId)
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+}
 
 module.exports = {
   createGroupController,
@@ -203,5 +226,7 @@ module.exports = {
   removeUserFromGroup,
   getGroupDetailsController,
   searchGroupsController,
-  pinUnpinGroupMessage
+  pinUnpinGroupMessage,
+  pinUnpinPrivateMessage,
+  pinUnpinSelfMessage
 };

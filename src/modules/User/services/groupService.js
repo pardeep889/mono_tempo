@@ -358,7 +358,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         include: [
           {
             model: db.User,
-            attributes: ['id', 'username', 'email'],
+            attributes: ['id', 'username', 'email', 'profileImageUrl', 'fullName'],
           }
         ],
         attributes: ['role'], // Include the role (ADMIN/MEMBER)
@@ -376,7 +376,9 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         id: user.User.id,
         username: user.User.username,
         email: user.User.email,
-        role: user.role // Include the role in the response
+        role: user.role,
+        profileImageUrl: user.User.profileImageUrl,
+        fullName: user.User.fullName
       }));
   
       return {
@@ -613,7 +615,131 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
     }
   }
+
+
+  async function togglePrivatePinnedMessage(messageId, userId) {
+    try {
+      // Check if the user is an admin in the group
+      const userIsSender = await db.Message.findOne({
+        where: {
+          senderId: userId,
+        },
+      });
   
+      if (!userIsSender) {
+        return { message: 'User does not have permission to pin/unpin messages', statusCode: 403, success: false, data: null };
+      }
+  
+      // Check if the message exists and belongs to the correct group
+      const message = await db.Message.findOne({
+        where: {
+          id: messageId,
+          senderId: userId,
+        },
+      });
+  
+      if (!message) {
+        return { message: 'Message not found', statusCode: 404, success: false, data: null };
+      }
+  
+      // Check if the message is already pinned
+      if (message.isPinned) {
+        // Unpin the message
+        message.isPinned = false;
+        await message.save();
+  
+        return {
+          message: 'Message unpinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      } else {
+        // Unpin any previously pinned message in the group
+        await db.Message.update(
+          { isPinned: false },
+          { where: { id: messageId, senderId: userId, isPinned: true } }
+        );
+  
+        // Pin the selected message
+        message.isPinned = true;
+        await message.save();
+  
+        return {
+          message: 'Message pinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      }
+    } catch (error) {
+      console.error('Error pinning/unpinning message:', error);
+      return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+    }
+  }
+  
+
+  async function toggleSelfPinnedMessage(messageId, userId) {
+    try {
+      // Check if the user is an admin in the group
+      const userIsSender = await db.Message.findOne({
+        where: {
+          senderId: userId,
+          isSelfChat: true
+        },
+      });
+  
+      if (!userIsSender) {
+        return { message: 'User does not have permission to pin/unpin messages', statusCode: 403, success: false, data: null };
+      }
+  
+      // Check if the message exists and belongs to the correct group
+      const message = await db.Message.findOne({
+        where: {
+          id: messageId,
+          senderId: userId,
+        },
+      });
+  
+      if (!message) {
+        return { message: 'Message not found', statusCode: 404, success: false, data: null };
+      }
+  
+      // Check if the message is already pinned
+      if (message.isPinned) {
+        // Unpin the message
+        message.isPinned = false;
+        await message.save();
+  
+        return {
+          message: 'Message unpinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      } else {
+        // Unpin any previously pinned message in the group
+        await db.Message.update(
+          { isPinned: false },
+          { where: { id: messageId, senderId: userId, isPinned: true } }
+        );
+  
+        // Pin the selected message
+        message.isPinned = true;
+        await message.save();
+  
+        return {
+          message: 'Message pinned successfully',
+          statusCode: 200,
+          success: true,
+          data: { message },
+        };
+      }
+    } catch (error) {
+      console.error('Error pinning/unpinning message:', error);
+      return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+    }
+  }
   
   module.exports = {
     createGroup,
@@ -629,5 +755,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     removeUserFromGroupService,
     getGroupDetails,
     searchGroups,
-    togglePinMessageGroup
+    togglePinMessageGroup,
+    togglePrivatePinnedMessage,
+    toggleSelfPinnedMessage
   };

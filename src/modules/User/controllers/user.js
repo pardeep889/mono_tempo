@@ -25,6 +25,8 @@ const {
   fetchPrivateMessages,
   fetchChatDetails,
   fetchPinnedGroupMessages,
+  fetchPinnedPrivateMessages,
+  fetchPinnedSelfMessages,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -417,9 +419,10 @@ async function createSelfChatMessageController(req, res) {
 
 async function fetchSelfChatMessagesController(req, res) {
   const { userId } = req.user; 
-  const { page = 1, limit = 10 } = req.query;
-
-  const { message, statusCode, success, data } = await fetchSelfChatMessages(userId, page, limit);
+  const { limit = 10 } = req.query;
+  const lastMessageId = parseInt(req.query.lastMessageId); // Get page from query params, default to 1
+  const type = req.query.type;  
+  const { message, statusCode, success, data } = await fetchSelfChatMessages(userId, limit, lastMessageId, type);
 
   return res.status(statusCode).json({
     success,
@@ -473,10 +476,11 @@ async function sendMessageToUserController(req, res) {
 async function fetchGroupMessagesController(req, res) {
   const { groupId } = req.params;
   const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
-  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const lastMessageId = parseInt(req.query.lastMessageId); // Get page from query params, default to 1
+  const type = req.query.type;
   const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
 
-  const { message, statusCode, success, data } = await fetchGroupMessages(groupId, userId, page, limit);
+  const { message, statusCode, success, data } = await fetchGroupMessages(groupId, userId, limit, lastMessageId, type);
 
   return res.status(statusCode).json({
     success,
@@ -488,10 +492,11 @@ async function fetchGroupMessagesController(req, res) {
 async function fetchPrivateMessagesController(req, res) {
   const { otherUserId } = req.params; // Get the other user's ID from the request params
   const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
-  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const lastMessageId = req.query.lastMessageId ? parseInt(req.query.lastMessageId) : null; // Get lastMessageId from query params
+  const type = req.query.type || 'older'; // Get type (newer/older) from query params, default to 'older'
   const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
 
-  const { message, statusCode, success, data } = await fetchPrivateMessages(userId, otherUserId, page, limit);
+  const { message, statusCode, success, data } = await fetchPrivateMessages(userId, otherUserId, limit, lastMessageId, type);
 
   return res.status(statusCode).json({
     success,
@@ -499,7 +504,6 @@ async function fetchPrivateMessagesController(req, res) {
     data,
   });
 }
-
 
 async function fetchUserChat(req, res) {
   const { userId } = req.user; // Get userId from the request params
@@ -530,6 +534,37 @@ async function fetchPinnedGroupMessagesController(req, res) {
   });
 }
 
+async function fetchPinnedPrivateMessagesController(req, res) {
+  const { chatId } = req.params;
+  const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
+  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
+
+  const { message, statusCode, success, data } = await fetchPinnedPrivateMessages(chatId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function fetchPinnedSelfMessagesController(req, res) {
+  const { chatId } = req.params;
+  const userId = req.user.userId; // Assuming the authenticated user ID is in req.user
+  const page = parseInt(req.query.page, 10) || 1; // Get page from query params, default to 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Get limit from query params, default to 10
+
+  const { message, statusCode, success, data } = await fetchPinnedSelfMessages(userId,chatId, page, limit);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+
 module.exports = {
   logingUser,
   createUser,
@@ -554,5 +589,7 @@ module.exports = {
   fetchGroupMessagesController,
   fetchPrivateMessagesController,
   fetchUserChat,
-  fetchPinnedGroupMessagesController
+  fetchPinnedGroupMessagesController,
+  fetchPinnedPrivateMessagesController,
+  fetchPinnedSelfMessagesController,
 };

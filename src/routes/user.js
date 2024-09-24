@@ -106,6 +106,11 @@ router.get('/private-messages/:otherUserId', authenticateJWT, userController.fet
 // Fetch Chat
 router.get('/chat/', authenticateJWT, userController.fetchUserChat);
 router.post('/group/pin-message', authenticateJWT, groupController.pinUnpinGroupMessage);
+router.post('/private/pin-message', authenticateJWT, groupController.pinUnpinPrivateMessage);
+router.get('/private/:chatId/pinned-messages', authenticateJWT, userController.fetchPinnedPrivateMessagesController);
+
+router.post('/self/pin-message', authenticateJWT, groupController.pinUnpinSelfMessage);
+router.get('/self/:chatId/pinned-messages', authenticateJWT, userController.fetchPinnedSelfMessagesController);
 
 
 

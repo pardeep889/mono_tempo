@@ -671,39 +671,52 @@ async function createSelfChatMessage(userId, text, attachmentUrl) {
   }
 }
 
-
 // Service function to fetch self-chat messages
-async function fetchSelfChatMessages(userId, page = 1, limit = 10) {
+async function fetchSelfChatMessages(userId, limit = 10, lastMessageId = null, type = 'older') {
   try {
-    const offset = (page - 1) * limit;
+    // Base query condition to fetch self-chat messages
+    const whereCondition = {
+      senderId: userId,
+      isSelfChat: true,
+    };
 
-    const { count, rows } = await db.Message.findAndCountAll({
-      where: {
-        senderId: userId,
-        isSelfChat: true,
-      },
+    // If lastMessageId is provided, adjust the query based on 'type'
+    if (lastMessageId) {
+      const lastMessage = await db.Message.findByPk(lastMessageId);
+      if (!lastMessage) {
+        return { message: 'Last message not found', statusCode: 404, success: false, data: null };
+      }
+
+      if (type === 'older') {
+        // Fetch older messages before the provided message
+        whereCondition.createdAt = { [db.Sequelize.Op.lt]: lastMessage.createdAt };
+      } else if (type === 'newer') {
+        // Fetch newer messages after the provided message
+        whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt };
+      } else {
+        return { message: 'Invalid type parameter', statusCode: 400, success: false, data: null };
+      }
+    }
+
+    // Fetch messages with the conditions and pagination
+    const messages = await db.Message.findAll({
+      where: whereCondition,
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
+      limit,
     });
-
-    const totalPages = Math.ceil(count / limit);
 
     return {
       message: 'Self-chat messages fetched successfully',
       statusCode: 200,
       success: true,
-      data: {
-        messages: rows,
-        currentPage: parseInt(page),
-        totalPages,
-      },
+      data: { messages },
     };
   } catch (error) {
     console.error('Error fetching self-chat messages:', error);
     return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
   }
 }
+
 
 async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
   try {
@@ -794,7 +807,8 @@ async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) 
     return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
   }
 }
-async function fetchGroupMessages(groupId, userId, page = 1, limit = 10) {
+async function fetchGroupMessages(groupId, userId, limit = 10, lastMessageId = null, type = 'older') {
+  console.log("lastMessageId", lastMessageId, "type", type);
   try {
     // Check if the group exists
     const group = await db.Group.findByPk(groupId);
@@ -802,9 +816,30 @@ async function fetchGroupMessages(groupId, userId, page = 1, limit = 10) {
       return { message: "Group not found", statusCode: 404, success: false, data: null };
     }
 
-    // Fetch all messages from the group with pagination and reversed order
+    // Base query conditions
+    const whereCondition = { groupId };
+
+    // If lastMessageId is provided, adjust query based on 'type'
+    if (lastMessageId) {
+      const lastMessage = await db.Message.findByPk(lastMessageId);
+      if (!lastMessage) {
+        return { message: "Last message not found", statusCode: 404, success: false, data: null };
+      }
+
+      if (type === 'older') {
+        // Fetch older messages before the provided message
+        whereCondition.createdAt = { [db.Sequelize.Op.lt]: lastMessage.createdAt };
+      } else if (type === 'newer') {
+        // Fetch newer messages after the provided message
+        whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt };
+      } else {
+        return { message: "Invalid type parameter", statusCode: 400, success: false, data: null };
+      }
+    }
+
+    // Fetch messages with the conditions and pagination
     const messages = await db.Message.findAll({
-      where: { groupId },
+      where: whereCondition,
       include: [
         {
           model: db.User,
@@ -814,7 +849,6 @@ async function fetchGroupMessages(groupId, userId, page = 1, limit = 10) {
       ],
       order: [['createdAt', 'DESC']], // Order by createdAt in descending order
       limit,
-      offset: (page - 1) * limit,
     });
 
     return {
@@ -829,16 +863,38 @@ async function fetchGroupMessages(groupId, userId, page = 1, limit = 10) {
   }
 }
 
-async function fetchPrivateMessages(userId, otherUserId, page = 1, limit = 10) {
+
+async function fetchPrivateMessages(userId, otherUserId, limit = 10, lastMessageId = null, type = 'older') {
   try {
-    // Fetch messages where the sender and receiver are either userId or otherUserId
+    // Base query condition to fetch private messages
+    const whereCondition = {
+      [Op.or]: [
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
+    };
+
+    // If lastMessageId is provided, adjust the query based on 'type'
+    if (lastMessageId) {
+      const lastMessage = await db.Message.findByPk(lastMessageId);
+      if (!lastMessage) {
+        return { message: 'Last message not found', statusCode: 404, success: false, data: null };
+      }
+
+      if (type === 'older') {
+        // Fetch older messages before the provided message's createdAt timestamp
+        whereCondition.createdAt = { [db.Sequelize.Op.lt]: lastMessage.createdAt };
+      } else if (type === 'newer') {
+        // Fetch newer messages after the provided message's createdAt timestamp
+        whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt };
+      } else {
+        return { message: 'Invalid type parameter', statusCode: 400, success: false, data: null };
+      }
+    }
+
+    // Fetch messages with the conditions and pagination
     const messages = await db.Message.findAll({
-      where: {
-        [Op.or]: [
-          { senderId: userId, receiverId: otherUserId },
-          { senderId: otherUserId, receiverId: userId },
-        ],
-      },
+      where: whereCondition,
       include: [
         {
           model: db.User,
@@ -853,7 +909,6 @@ async function fetchPrivateMessages(userId, otherUserId, page = 1, limit = 10) {
       ],
       order: [['createdAt', 'DESC']], // Order by createdAt in descending order
       limit,
-      offset: (page - 1) * limit,
     });
 
     return {
@@ -982,6 +1037,68 @@ async function fetchPinnedGroupMessages(groupId, userId, page = 1, limit = 10) {
   }
 }
 
+
+
+async function fetchPinnedPrivateMessages(chatId, page = 1, limit = 10) {
+  try {
+    // Fetch all messages from the group with pagination and reversed order
+    const messages = await db.Message.findAll({
+      where: { chatId, isPinned: true },
+      include: [
+        {
+          model: db.User,
+          as: 'Sender',
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'],
+        }
+      ],
+      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    return {
+      message: "Messages fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: { messages },
+    };
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+
+
+async function fetchPinnedSelfMessages(userId,chatId, page = 1, limit = 10) {
+  try {
+    // Fetch all messages from the group with pagination and reversed order
+    const messages = await db.Message.findAll({
+      where: { chatId, senderId: userId, isPinned: true , isSelfChat: true},
+      include: [
+        {
+          model: db.User,
+          as: 'Sender',
+          attributes: ['id', 'fullName', 'email', 'profileImageUrl'],
+        }
+      ],
+      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    return {
+      message: "Messages fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: { messages },
+    };
+  } catch (error) {
+    console.error("Error fetching group messages:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -1006,5 +1123,7 @@ module.exports = {
   fetchGroupMessages: fetchGroupMessages,
   fetchPrivateMessages: fetchPrivateMessages,
   fetchChatDetails: fetchChatDetails,
-  fetchPinnedGroupMessages: fetchPinnedGroupMessages
+  fetchPinnedGroupMessages: fetchPinnedGroupMessages,
+  fetchPinnedPrivateMessages: fetchPinnedPrivateMessages,
+  fetchPinnedSelfMessages: fetchPinnedSelfMessages
 };
