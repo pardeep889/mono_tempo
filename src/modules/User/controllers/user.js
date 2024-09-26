@@ -444,7 +444,7 @@ async function sendMessageToGroupController(req, res) {
       const users = await fetchGroupUsersUtilService(groupId);
       const groupDetail = await fetchGroupDetailsUtilService(groupId);
       users.forEach(user => {
-        sendNotificationToUser(senderId, user['User.id'], `New Group Message from ${fullName} in ${groupDetail.name}`, text, "group-message", senderId);
+        sendNotificationToUser(senderId, user['User.id'], `New Group Message from ${fullName} in ${groupDetail.name}`, text, "group-message", groupId);
       });
     });
   }

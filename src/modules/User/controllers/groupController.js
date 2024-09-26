@@ -16,9 +16,8 @@ const createGroupController = async (req, res) => {
 };
 
 const addGroupMemberController = async (req, res) => {
-  const { groupId, userId } = req.body;
+  const { groupId, userId } = req.body;  // userId is now an array
   const adminId = req.user.userId;
-  
   const { message, success, statusCode, data } = await addGroupMember(groupId, userId, adminId);
   return res.status(statusCode).json({
     success,

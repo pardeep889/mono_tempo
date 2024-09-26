@@ -49,8 +49,18 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     }
   }
   
-  async function addGroupMember(groupId, userId, adminId) {
+  async function addGroupMember(groupId, userIds, adminId) {
     try {
+        // Validate if userId is an array
+      if (!Array.isArray(userIds)) {
+        return {
+          statusCode: 200,
+          success: false,
+          message: "Please send an array of userId like userId: []",
+          data: null
+        }
+      }
+
       // Check if the requesting user is an admin of the group
       const isAdmin = await db.GroupMembership.findOne({
         where: {
@@ -69,38 +79,51 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         };
       }
   
-      // Check if the user is already a member of the group
-      const existingMember = await db.GroupMembership.findOne({
-        where: {
+      const addedUsers = [];
+      const alreadyMembers = [];
+  
+      for (const userId of userIds) {
+        // Check if the user is already a member of the group
+        const existingMember = await db.GroupMembership.findOne({
+          where: {
+            groupId,
+            userId,
+          },
+        });
+  
+        if (existingMember) {
+          alreadyMembers.push(userId);
+          continue;  // Skip to the next userId if already a member
+        }
+  
+        // Add the user to the group with MEMBER role
+        await db.GroupMembership.create({
           groupId,
           userId,
-        },
-      });
+          role: "MEMBER",
+        });
   
-      if (existingMember) {
-        return {
-          message: "User is already a member of this group",
-          statusCode: 400,
-          success: false,
-          data: null,
-        };
+        addedUsers.push(userId);
       }
   
-      // Add the user to the group with MEMBER role
-      await db.GroupMembership.create({
-        groupId,
-        userId,
-        role: "MEMBER",
-      });
-  
-      return {
-        message: "User added to the group successfully",
-        statusCode: 200,
-        success: true,
-        data: null,
-      };
+      // Return appropriate messages based on the result
+      if (addedUsers.length > 0) {
+        return {
+          message: `Added ${addedUsers.length} users successfully. Already members: ${alreadyMembers.length > 0 ? alreadyMembers.join(", ") : "None"}`,
+          statusCode: 200,
+          success: true,
+          data: { addedUsers, alreadyMembers },
+        };
+      } else {
+        return {
+          message: "All users are already members of this group",
+          statusCode: 400,
+          success: false,
+          data: { alreadyMembers },
+        };
+      }
     } catch (error) {
-      console.error("Error adding member to group:", error);
+      console.error("Error adding members to group:", error);
       return {
         message: "Internal Server Error",
         statusCode: 500,

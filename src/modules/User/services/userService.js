@@ -767,7 +767,7 @@ async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) 
     
 
         // check chat
-    let chat = await db.Chat.findOne({ where: { receiverId, type: 'PRIVATE' } });
+    let chat = await db.Chat.findOne({ where: { userId: senderId, receiverId, type: 'PRIVATE' } });
     if (!chat) {
       chat = await db.Chat.create({userId: senderId, receiverId, type: 'PRIVATE' });
     }else {
@@ -864,14 +864,18 @@ async function fetchGroupMessages(groupId, userId, limit = 10, lastMessageId = n
 }
 
 
-async function fetchPrivateMessages(userId, otherUserId, limit = 10, lastMessageId = null, type = 'older') {
+async function fetchPrivateMessages(userId, chatId, limit = 10, lastMessageId = null, type = 'older') {
   try {
-    // Base query condition to fetch private messages
+    // Check if the chat exists
+    const chat = await db.Chat.findByPk(chatId);
+
+    if (!chat) {
+      return { message: "Chat not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Use chatId to fetch messages
     const whereCondition = {
-      [Op.or]: [
-        { senderId: userId, receiverId: otherUserId },
-        { senderId: otherUserId, receiverId: userId },
-      ],
+      chatId: chat.id, // Filter messages by chatId
     };
 
     // If lastMessageId is provided, adjust the query based on 'type'
@@ -882,10 +886,8 @@ async function fetchPrivateMessages(userId, otherUserId, limit = 10, lastMessage
       }
 
       if (type === 'older') {
-        // Fetch older messages before the provided message's createdAt timestamp
         whereCondition.createdAt = { [db.Sequelize.Op.lt]: lastMessage.createdAt };
       } else if (type === 'newer') {
-        // Fetch newer messages after the provided message's createdAt timestamp
         whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt };
       } else {
         return { message: 'Invalid type parameter', statusCode: 400, success: false, data: null };
@@ -907,7 +909,7 @@ async function fetchPrivateMessages(userId, otherUserId, limit = 10, lastMessage
           attributes: ['id', 'fullName', 'email'],
         },
       ],
-      order: [['createdAt', 'DESC']], // Order by createdAt in descending order
+      order: [['createdAt', 'DESC']], // Keep descending order to get the latest messages first
       limit,
     });
 
@@ -922,6 +924,7 @@ async function fetchPrivateMessages(userId, otherUserId, limit = 10, lastMessage
     return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
   }
 }
+
 
 async function fetchChatDetails(userId, page, limit) {
   try {
