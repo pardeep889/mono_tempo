@@ -37,7 +37,7 @@ router.post('/unfollow', authenticateJWT, userController.unfollowUser);
 router.get("/fetch-followers/:id",authenticateJWT, userController.fetchFollowersController);
 router.get("/fetch-following/:id",authenticateJWT, userController.fetchFollowingController);
 router.get('/search', authenticateJWT, userController.searchUsersController);
-router.get('/check-username', authenticateJWT, userController.checkUsernameController);
+router.get('/check-username', userController.checkUsernameController);
 
 
 

@@ -479,6 +479,7 @@ const userUpdate = async (userId, userData) => {
       };
     }
   } catch (error) {
+    console.log(error)
     return {
       data: error.message,
       statusCode: 500,
@@ -762,12 +763,10 @@ async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
   }
 }
 
-async function sendMessageToUser(senderId, receiverId, text, attachmentUrl, io) {
+async function sendMessageToUser(chatId, senderId, receiverId, text, attachmentUrl, io) {
   try {
-    
-
         // check chat
-    let chat = await db.Chat.findOne({ where: { userId: senderId, receiverId, type: 'PRIVATE' } });
+    let chat = await db.Chat.findOne({ where: { id: chatId, type: 'PRIVATE' } });
     if (!chat) {
       chat = await db.Chat.create({userId: senderId, receiverId, type: 'PRIVATE' });
     }else {
