@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -211,6 +211,52 @@ async function pinUnpinSelfMessage(req, res) {
   });
 }
 
+async function deleteGroupMessageController(req, res) {
+  const { messageId, groupId } = req.body;
+  const { userId } = req.user; // Assuming you have middleware that sets req.user
+  if(!groupId){
+    return res.status(500).json({
+      success: false,
+      message: "Please  provide group id",
+      data: null,
+    });
+  }
+  const result = await deleteGroupMessage(messageId, groupId, userId);
+
+  return res.status(result.statusCode).json({
+    success: result.success,
+    message: result.message,
+    data: result.data,
+  });
+}
+
+const removeGroupMemberController = async (req, res) => {
+  const { groupId, userIds } = req.body;  // userIds is an array
+  const adminId = req.user.userId;
+
+  const { message, success, statusCode, data } = await removeGroupMember(groupId, userIds, adminId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+
+const adminToMemberController = async (req, res) => {
+  const { groupId, targetUserId } = req.body;  // The target user to be demoted
+  const requestingUserId = req.user.userId;  // The user making the request (must be an admin)
+
+  const { message, success, statusCode, data } = await adminToMember(groupId, targetUserId, requestingUserId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+
 module.exports = {
   createGroupController,
   addGroupMemberController,
@@ -227,5 +273,8 @@ module.exports = {
   searchGroupsController,
   pinUnpinGroupMessage,
   pinUnpinPrivateMessage,
-  pinUnpinSelfMessage
+  pinUnpinSelfMessage,
+  deleteGroupMessageController,
+  removeGroupMemberController,
+  adminToMemberController
 };

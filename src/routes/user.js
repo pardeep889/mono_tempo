@@ -91,6 +91,10 @@ router.delete('/:groupId/users/:userId', authenticateJWT, groupController.remove
 router.get('/group/:groupId', authenticateJWT, groupController.getGroupDetailsController);
 router.get('/groups/search', authenticateJWT, groupController.searchGroupsController);
 
+router.post("/remove-group-member", authenticateJWT, groupController.removeGroupMemberController);
+
+router.post("/admin-to-member", authenticateJWT, groupController.adminToMemberController);
+
 
 // Chat Routes
 router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);
@@ -111,6 +115,13 @@ router.get('/private/:chatId/pinned-messages', authenticateJWT, userController.f
 
 router.post('/self/pin-message', authenticateJWT, groupController.pinUnpinSelfMessage);
 router.get('/self/:chatId/pinned-messages', authenticateJWT, userController.fetchPinnedSelfMessagesController);
+
+// Delete Message 
+router.delete('/message/:messageId', authenticateJWT, userController.deleteMessageController);
+router.delete('/group-message/', authenticateJWT, groupController.deleteGroupMessageController);
+
+// Edit Message
+router.put('/message/:messageId', authenticateJWT, userController.editMessageController);
 
 
 

@@ -1119,6 +1119,67 @@ async function fetchPinnedSelfMessages(userId,chatId, page = 1, limit = 10) {
   }
 }
 
+async function deleteMessage(userId, messageId) {
+  try {
+    // Find the message by its ID
+    const message = await db.Message.findByPk(messageId);
+
+    // Check if the message exists
+    if (!message) {
+      return { message: 'Message not found', statusCode: 404, success: false, data: null };
+    }
+
+    // Check if the current user is the sender of the message
+    if (message.senderId !== userId) {
+      return { message: 'Unauthorized: You can only delete your own messages', statusCode: 403, success: false, data: null };
+    }
+
+    // Delete the message
+    await message.destroy();
+
+    return {
+      message: 'Message deleted successfully',
+      statusCode: 200,
+      success: true,
+      data: null,
+    };
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+  }
+}
+
+async function editMessage(userId, messageId, newText, newAttachmentUrl) {
+  try {
+    // Find the message by its ID
+    const message = await db.Message.findByPk(messageId);
+
+    // Check if the message exists
+    if (!message) {
+      return { message: 'Message not found', statusCode: 404, success: false, data: null };
+    }
+
+    // Check if the current user is the sender of the message
+    if (message.senderId !== userId) {
+      return { message: 'Unauthorized: You can only edit your own messages', statusCode: 403, success: false, data: null };
+    }
+
+    // Update the message content
+    message.text = newText || message.text; // Only update if a new text is provided
+    message.attachmentUrl = newAttachmentUrl || message.attachmentUrl; // Only update if a new attachment URL is provided
+    await message.save();
+
+    return {
+      message: 'Message updated successfully',
+      statusCode: 200,
+      success: true,
+      data: { message },
+    };
+  } catch (error) {
+    console.error('Error updating message:', error);
+    return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
+  }
+}
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -1145,5 +1206,7 @@ module.exports = {
   fetchChatDetails: fetchChatDetails,
   fetchPinnedGroupMessages: fetchPinnedGroupMessages,
   fetchPinnedPrivateMessages: fetchPinnedPrivateMessages,
-  fetchPinnedSelfMessages: fetchPinnedSelfMessages
+  fetchPinnedSelfMessages: fetchPinnedSelfMessages,
+  deleteMessage: deleteMessage,
+  editMessage: editMessage
 };

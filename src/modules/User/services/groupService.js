@@ -764,6 +764,189 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     }
   }
   
+  // Service function to handle the deletion logic
+async function deleteGroupMessage(messageId, groupId, userId) {
+  try {
+    // Fetch the message to check groupId and sender
+    const message = await db.Message.findOne({ where: { id: messageId, groupId } });
+    
+    if (!message) {
+      return { message: "Message not found or does not belong to the specified group.", statusCode: 404, success: false, data: null };
+    }
+
+    // Check if the user is an admin of the group
+    const membership = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId,
+        role: "ADMIN"
+      }
+    });
+
+    if (!membership) {
+      return { message: "You do not have permission to delete this message.", statusCode: 403, success: false, data: null };
+    }
+
+    // Delete the message
+    await message.destroy();
+
+    return {
+      message: "Message deleted successfully.",
+      statusCode: 200,
+      success: true,
+      data: null,
+    };
+  } catch (error) {
+    console.error("Error deleting group message:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function removeGroupMember(groupId, userIds, adminId) {
+  try {
+    // Validate if userIds is an array
+    if (!Array.isArray(userIds)) {
+      return {
+        statusCode: 200,
+        success: false,
+        message: "Please send an array of userId like userId: []",
+        data: null
+      };
+    }
+
+    // Check if the requesting user is an admin of the group
+    const isAdmin = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId: adminId,
+        role: "ADMIN",
+      },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only group admins can remove members",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    const removedUsers = [];
+    const notMembers = [];
+
+    for (const userId of userIds) {
+      // Check if the user is a member of the group
+      const existingMember = await db.GroupMembership.findOne({
+        where: {
+          groupId,
+          userId,
+        },
+      });
+
+      if (!existingMember) {
+        notMembers.push(userId);  // User is not a member of the group
+        continue;  // Skip to the next userId
+      }
+
+      // Remove the user from the group
+      await db.GroupMembership.destroy({
+        where: {
+          groupId,
+          userId,
+        },
+      });
+
+      removedUsers.push(userId);
+    }
+
+    // Return appropriate messages based on the result
+    if (removedUsers.length > 0) {
+      return {
+        message: `Removed ${removedUsers.length} users successfully. Not members: ${notMembers.length > 0 ? notMembers.join(", ") : "None"}`,
+        statusCode: 200,
+        success: true,
+        data: { removedUsers, notMembers },
+      };
+    } else {
+      return {
+        message: "None of the users were members of this group",
+        statusCode: 400,
+        success: false,
+        data: { notMembers },
+      };
+    }
+  } catch (error) {
+    console.error("Error removing members from group:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+async function adminToMember(groupId, targetUserId, requestingUserId) {
+  try {
+    // Check if the requesting user is an admin of the group
+    const isAdmin = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId: requestingUserId,
+        role: "ADMIN",
+      },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only group admins can change roles",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Check if the target user is an admin in the group
+    const targetUser = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId: targetUserId,
+        role: "ADMIN",
+      },
+    });
+
+    if (!targetUser) {
+      return {
+        message: "Target user is not an admin in this group",
+        statusCode: 404,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Demote the target user to a member
+    targetUser.role = "MEMBER";
+    await targetUser.save();
+
+    return {
+      message: `User ${targetUserId} has been demoted to a member successfully`,
+      statusCode: 200,
+      success: true,
+      data: { targetUserId, newRole: "MEMBER" },
+    };
+
+  } catch (error) {
+    console.error("Error demoting admin to member:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
   module.exports = {
     createGroup,
     addGroupMember,
@@ -780,5 +963,8 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     searchGroups,
     togglePinMessageGroup,
     togglePrivatePinnedMessage,
-    toggleSelfPinnedMessage
+    toggleSelfPinnedMessage,
+    deleteGroupMessage,
+    removeGroupMember,
+    adminToMember
   };

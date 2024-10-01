@@ -27,6 +27,8 @@ const {
   fetchPinnedGroupMessages,
   fetchPinnedPrivateMessages,
   fetchPinnedSelfMessages,
+  deleteMessage,
+  editMessage,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -564,6 +566,33 @@ async function fetchPinnedSelfMessagesController(req, res) {
   });
 }
 
+async function deleteMessageController(req, res) {
+  const { messageId } = req.params; // messageId is passed in the URL params
+  const { userId } = req.user; // Get the current logged-in user's ID from req.user
+
+  const { message, statusCode, success, data } = await deleteMessage(userId, messageId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
+async function editMessageController(req, res) {
+  const { messageId } = req.params; // messageId is passed in the URL params
+  const { text, attachmentUrl } = req.body; // New text and attachmentUrl from the request body
+  const { userId } = req.user; // Get the current logged-in user's ID from req.user
+
+  const { message, statusCode, success, data } = await editMessage(userId, messageId, text, attachmentUrl);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+}
+
 
 module.exports = {
   logingUser,
@@ -592,4 +621,6 @@ module.exports = {
   fetchPinnedGroupMessagesController,
   fetchPinnedPrivateMessagesController,
   fetchPinnedSelfMessagesController,
+  deleteMessageController,
+  editMessageController
 };
