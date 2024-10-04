@@ -947,6 +947,375 @@ async function adminToMember(groupId, targetUserId, requestingUserId) {
   }
 }
 
+async function joinPublicGroup(groupId, userId) {
+  try {
+    // Check if the group exists and is public
+    const group = await db.Group.findOne({
+      where: {
+        id: groupId,
+        type: "PUBLIC",  // Only allow joining public groups
+      },
+    });
+
+    if (!group) {
+      return {
+        message: "Group not found or is not public",
+        statusCode: 404,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Check if the user is already a member of the group
+    const existingMembership = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId,
+      },
+    });
+
+    if (existingMembership) {
+      return {
+        message: "User is already a member of this group",
+        statusCode: 400,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Add the user as a member of the group
+    await db.GroupMembership.create({
+      groupId,
+      userId,
+      role: "MEMBER",
+    });
+
+    return {
+      message: "User has successfully joined the group",
+      statusCode: 200,
+      success: true,
+      data: { groupId, userId, role: "MEMBER" },
+    };
+
+  } catch (error) {
+    console.error("Error joining public group:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+
+async function requestJoinPrivateGroup(groupId, userId) {
+  try {
+    // Check if the group is private
+    const group = await db.Group.findOne({
+      where: { id: groupId, type: "PRIVATE" },
+    });
+
+    if (!group) {
+      return {
+        message: "Group not found or is not private",
+        statusCode: 404,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Check if there's already a request pending
+    const existingRequest = await db.GroupRequest.findOne({
+      where: { groupId, userId, status: "PENDING" },
+    });
+
+    if (existingRequest) {
+      return {
+        message: "You already have a pending request",
+        statusCode: 400,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Create a join request
+    await db.GroupRequest.create({
+      groupId,
+      userId,
+      status: "PENDING",
+    });
+
+    return {
+      message: "Join request has been sent",
+      statusCode: 200,
+      success: true,
+      data: { groupId, userId },
+    };
+  } catch (error) {
+    console.error("Error requesting to join private group:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+
+async function fetchGroupRequests(groupId, adminId) {
+  try {
+    // Verify if the requesting user is an admin
+    const isAdmin = await db.GroupMembership.findOne({
+      where: { groupId, userId: adminId, role: "ADMIN" },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only admins can fetch group requests",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Fetch pending requests
+    const requests = await db.GroupRequest.findAll({
+      where: { groupId, status: "PENDING" },
+      include: [{ model: db.User, attributes: ['id', 'username', 'fullName'] }],
+    });
+
+    return {
+      message: "Fetched group requests",
+      statusCode: 200,
+      success: true,
+      data: requests,
+    };
+  } catch (error) {
+    console.error("Error fetching group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+async function acceptGroupRequests(groupId, userIds, adminId) {
+  try {
+    // Check if the requesting user is an admin
+    const isAdmin = await db.GroupMembership.findOne({
+      where: { groupId, userId: adminId, role: "ADMIN" },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only admins can accept requests",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    const acceptedUsers = [];
+    const failedUsers = [];
+
+    for (const userId of userIds) {
+      // Check if the request is pending
+      const request = await db.GroupRequest.findOne({
+        where: { groupId, userId, status: "PENDING" },
+      });
+
+      if (!request) {
+        failedUsers.push(userId);
+        continue;  // Skip if the request is not found or not pending
+      }
+
+      // Add the user to the group as a MEMBER
+      await db.GroupMembership.create({
+        groupId,
+        userId,
+        role: "MEMBER",
+      });
+
+      // Mark the request as accepted and store the admin who accepted it
+      await request.update({ status: "APPROVED", acceptedBy: adminId });
+
+      acceptedUsers.push(userId);
+    }
+
+    if (acceptedUsers.length > 0) {
+      return {
+        message: `Accepted ${acceptedUsers.length} requests successfully.`,
+        statusCode: 200,
+        success: true,
+        data: { acceptedUsers, failedUsers },
+      };
+    } else {
+      return {
+        message: "No valid requests to accept",
+        statusCode: 400,
+        success: false,
+        data: { failedUsers },
+      };
+    }
+  } catch (error) {
+    console.error("Error accepting group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+async function rejectGroupRequests(groupId, userIds, adminId) {
+  try {
+    // Verify if the requesting user is an admin of the group
+    const isAdmin = await db.GroupMembership.findOne({
+      where: { groupId, userId: adminId, role: "ADMIN" },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only admins can reject requests",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    const rejectedUsers = [];
+    const failedUsers = [];
+
+    for (const userId of userIds) {
+      // Check if the request is pending
+      const request = await db.GroupRequest.findOne({
+        where: { groupId, userId, status: "PENDING" },
+      });
+
+      if (!request) {
+        failedUsers.push(userId);  // If request not found or already handled, mark it as failed
+        continue;
+      }
+
+      // Mark the request as REJECTED
+      await request.update({ status: "REJECTED", acceptedBy: adminId });
+
+      rejectedUsers.push(userId);
+    }
+
+    if (rejectedUsers.length > 0) {
+      return {
+        message: `Rejected ${rejectedUsers.length} request(s) successfully.`,
+        statusCode: 200,
+        success: true,
+        data: { rejectedUsers, failedUsers },
+      };
+    } else {
+      return {
+        message: "No valid requests to reject",
+        statusCode: 400,
+        success: false,
+        data: { failedUsers },
+      };
+    }
+  } catch (error) {
+    console.error("Error rejecting group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+async function getUserGroupRequests(userId) {
+  try {
+    // Fetch all group requests for the current user
+    const groupRequests = await db.GroupRequest.findAll({
+      where: { userId },
+      include: [
+        {
+          model: db.Group,  // No alias needed here
+          attributes: ["id", "name", "type", "icon", "createdAt"]
+        }
+      ]
+    });
+
+    if (groupRequests.length === 0) {
+      return {
+        message: "No group requests found for this user",
+        statusCode: 404,
+        success: false,
+        data: null
+      };
+    }
+
+    return {
+      message: "Group requests fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: groupRequests
+    };
+
+  } catch (error) {
+    console.error("Error fetching group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null
+    };
+  }
+}
+
+async function getSingleGroupRequestByGroupId(groupId, userId) {
+  try {
+    // Fetch the first group request for the provided groupId and userId
+    const groupRequest = await db.GroupRequest.findOne({
+      where: {
+        groupId,
+        userId
+      },
+      include: [
+        {
+          model: db.Group,
+          attributes: ["id", "name", "type", "createdAt"]
+        }
+      ]
+    });
+
+    if (!groupRequest) {
+      return {
+        message: "No group request found for this group",
+        statusCode: 404,
+        success: false,
+        data: null
+      };
+    }
+
+    return {
+      message: "Group request found successfully",
+      statusCode: 200,
+      success: true,
+      data: groupRequest
+    };
+
+  } catch (error) {
+    console.error("Error fetching group request:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null
+    };
+  }
+}
+
   module.exports = {
     createGroup,
     addGroupMember,
@@ -966,5 +1335,12 @@ async function adminToMember(groupId, targetUserId, requestingUserId) {
     toggleSelfPinnedMessage,
     deleteGroupMessage,
     removeGroupMember,
-    adminToMember
+    adminToMember,
+    joinPublicGroup,
+    requestJoinPrivateGroup,
+    fetchGroupRequests,
+    acceptGroupRequests,
+    rejectGroupRequests,
+    getUserGroupRequests,
+    getSingleGroupRequestByGroupId
   };

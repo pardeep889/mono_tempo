@@ -95,6 +95,14 @@ router.post("/remove-group-member", authenticateJWT, groupController.removeGroup
 
 router.post("/admin-to-member", authenticateJWT, groupController.adminToMemberController);
 
+router.post("/join-public-group", authenticateJWT, groupController.joinPublicGroupController);
+router.post("/request-join-private-group", authenticateJWT, groupController.requestJoinPrivateGroupController);
+router.get("/fetch-group-requests/:groupId", authenticateJWT, groupController.fetchGroupRequestsController);
+router.post("/accept-group-requests", authenticateJWT, groupController.acceptGroupRequestsController);
+
+router.post("/reject-group-requests", authenticateJWT, groupController.rejectGroupRequestsController);
+router.get("/user-group-requests", authenticateJWT, groupController.getUserGroupRequestsController);
+router.get("/group-request/:groupId", authenticateJWT, groupController.getGroupRequestByGroupId);
 
 // Chat Routes
 router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);
@@ -115,6 +123,9 @@ router.get('/private/:chatId/pinned-messages', authenticateJWT, userController.f
 
 router.post('/self/pin-message', authenticateJWT, groupController.pinUnpinSelfMessage);
 router.get('/self/:chatId/pinned-messages', authenticateJWT, userController.fetchPinnedSelfMessagesController);
+
+router.get('/around-messages/:messageId', authenticateJWT, userController.fetchSroundedMessagesOfPinnedMessage);
+
 
 // Delete Message 
 router.delete('/message/:messageId', authenticateJWT, userController.deleteMessageController);

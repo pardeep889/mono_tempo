@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -256,6 +256,90 @@ const adminToMemberController = async (req, res) => {
   });
 };
 
+const joinPublicGroupController = async (req, res) => {
+  const { groupId } = req.body;  // Group ID to join
+  const userId = req.user.userId;  // ID of the user trying to join
+
+  const { message, success, statusCode, data } = await joinPublicGroup(groupId, userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const requestJoinPrivateGroupController = async (req, res) => {
+  const { groupId } = req.body;
+  const userId = req.user.userId;
+
+  const { message, success, statusCode, data } = await requestJoinPrivateGroup(groupId, userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const fetchGroupRequestsController = async (req, res) => {
+  const { groupId } = req.params;
+  const adminId = req.user.userId;
+
+  const { message, success, statusCode, data } = await fetchGroupRequests(groupId, adminId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const acceptGroupRequestsController = async (req, res) => {
+  const { groupId, userIds } = req.body;  // userIds is an array
+  const adminId = req.user.userId;
+
+  const { message, success, statusCode, data } = await acceptGroupRequests(groupId, userIds, adminId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+
+const rejectGroupRequestsController = async (req, res) => {
+  const { groupId, userIds } = req.body;  // userIds is an array of users to be rejected
+  const adminId = req.user.userId;
+
+  const { message, success, statusCode, data } = await rejectGroupRequests(groupId, userIds, adminId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const getUserGroupRequestsController = async (req, res) => {
+  const userId = req.user.userId;  // Fetch user ID from JWT
+
+  const { message, success, statusCode, data } = await getUserGroupRequests(userId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const getGroupRequestByGroupId = async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.userId; // Assume that the userId is coming from the authentication token (JWT)
+
+  const { message, success, statusCode, data } = await getSingleGroupRequestByGroupId(groupId, userId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
 
 module.exports = {
   createGroupController,
@@ -276,5 +360,12 @@ module.exports = {
   pinUnpinSelfMessage,
   deleteGroupMessageController,
   removeGroupMemberController,
-  adminToMemberController
+  adminToMemberController,
+  joinPublicGroupController,
+  requestJoinPrivateGroupController,
+  fetchGroupRequestsController,
+  acceptGroupRequestsController,
+  rejectGroupRequestsController,
+  getUserGroupRequestsController,
+  getGroupRequestByGroupId
 };

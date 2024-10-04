@@ -29,6 +29,7 @@ const {
   fetchPinnedSelfMessages,
   deleteMessage,
   editMessage,
+  fetchMessagesAroundId,
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -593,7 +594,17 @@ async function editMessageController(req, res) {
   });
 }
 
+const fetchSroundedMessagesOfPinnedMessage = async (req, res) => {
+  const messageId = req.params.messageId;
+  
+  const result = await fetchMessagesAroundId(messageId);
 
+  if (result.success) {
+    return res.status(200).json(result);
+  } else {
+    return res.status(500).json(result);
+  }
+};
 module.exports = {
   logingUser,
   createUser,
@@ -622,5 +633,6 @@ module.exports = {
   fetchPinnedPrivateMessagesController,
   fetchPinnedSelfMessagesController,
   deleteMessageController,
-  editMessageController
+  editMessageController,
+  fetchSroundedMessagesOfPinnedMessage
 };

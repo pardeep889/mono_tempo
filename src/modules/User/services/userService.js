@@ -979,7 +979,7 @@ async function fetchChatDetails(userId, page, limit) {
         {
           model: db.Message,
           as: 'latestMessage', // Fetch the latest message for each chat
-          attributes: ['text', 'senderId'], // Include the fields you need
+          attributes: ['text', 'senderId', 'createdAt'], // Include the fields you need
           order: [['createdAt', 'DESC']], // Ensure it's the latest message
           limit: 1, // Only fetch the latest message
           required: false, // Do not filter out chats without messages
@@ -1180,6 +1180,92 @@ async function editMessage(userId, messageId, newText, newAttachmentUrl) {
     return { message: 'Internal Server Error', statusCode: 500, success: false, data: null };
   }
 }
+
+async function fetchMessagesAroundId(messageId) {
+  try {
+    // Fetch the specific message to determine its type
+    const message = await db.Message.findOne({
+      where: { id: messageId }
+    });
+
+    if (!message) {
+      return {
+        success: false,
+        message: "Message not found",
+        data: null,
+      };
+    }
+
+    let condition = {};
+
+    // Determine message type
+    if (message.isSelfChat) {
+      // Self-chat, look for messages with the same `chatId` and `isSelfChat` set to true
+      condition = {
+        chatId: message.chatId,
+        isSelfChat: true,
+      };
+    } else if (message.receiverId && !message.groupId) {
+      // Private chat, look for messages between the same sender and receiver
+      condition = {
+        [Op.or]: [
+          { senderId: message.senderId, receiverId: message.receiverId },
+          { senderId: message.receiverId, receiverId: message.senderId }
+        ],
+      };
+    } else if (message.groupId) {
+      // Group chat, look for messages in the same group
+      condition = {
+        groupId: message.groupId,
+        isSelfChat: false,
+      };
+    } else {
+      return {
+        success: false,
+        message: "Invalid message type",
+        data: null,
+      };
+    }
+
+    // Fetch 5 messages before and 5 after the current message
+    const messagesBefore = await db.Message.findAll({
+      where: {
+        ...condition,
+        id: { [Op.lt]: message.id }
+      },
+      order: [['id', 'DESC']],
+      limit: 5
+    });
+
+    const messagesAfter = await db.Message.findAll({
+      where: {
+        ...condition,
+        id: { [Op.gt]: message.id }
+      },
+      order: [['id', 'ASC']],
+      limit: 5
+    });
+
+    // Combine messages before and after, sorted by ascending ID
+    const messages = [...messagesBefore.reverse(), message, ...messagesAfter];
+
+    return {
+      success: true,
+      message: "Fetched surrounding messages successfully",
+      data: messages
+    };
+
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    };
+  }
+}
+
+
 module.exports = {
   userLogin: userLogin,
   userCreate: userCreate,
@@ -1208,5 +1294,6 @@ module.exports = {
   fetchPinnedPrivateMessages: fetchPinnedPrivateMessages,
   fetchPinnedSelfMessages: fetchPinnedSelfMessages,
   deleteMessage: deleteMessage,
-  editMessage: editMessage
+  editMessage: editMessage,
+  fetchMessagesAroundId: fetchMessagesAroundId
 };
