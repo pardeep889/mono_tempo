@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId, generateInviteCode, joinGroup, fetchGroupByInviteCode } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -341,6 +341,44 @@ const getGroupRequestByGroupId = async (req, res) => {
   });
 };
 
+const generateInviteCodeByAdmin = async (req, res) => {
+  const { groupId, hrs } = req.body;  // userIds is an array of users to be rejected
+  const adminId = req.user.userId;
+
+  const { message, statusCode, success, data } = await generateInviteCode(groupId, adminId, hrs); // Expires in 24 hours
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const joinGroupWithInviteCode = async (req, res) => {
+  const { inviteCode } = req.body;
+  const userId = req.user.userId;
+
+  const { message, statusCode, success, data } = await joinGroup(inviteCode, userId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
+const getGroupDetailsByInviteCode = async (req, res) => {
+  const { inviteCode } = req.params;
+  const { message, statusCode, success, data } = await fetchGroupByInviteCode(inviteCode);
+  
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+}
+
+
+
 module.exports = {
   createGroupController,
   addGroupMemberController,
@@ -367,5 +405,8 @@ module.exports = {
   acceptGroupRequestsController,
   rejectGroupRequestsController,
   getUserGroupRequestsController,
-  getGroupRequestByGroupId
+  getGroupRequestByGroupId,
+  generateInviteCodeByAdmin,
+  joinGroupWithInviteCode,
+  getGroupDetailsByInviteCode
 };

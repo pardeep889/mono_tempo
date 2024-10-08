@@ -1,6 +1,8 @@
 // groupService.js
 const { Op } = require("sequelize");
 const db = require("../../../../sequelize/models");
+const crypto = require('crypto'); // For generating random invite codes
+
 
 async function createGroup(creatorId, name, description, type, members, icon) {
     console.log("Creating Group: ", creatorId, name, description, type, members, icon)
@@ -473,7 +475,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       // Fetch group details
       const group = await db.Group.findOne({
         where: { id: groupId },
-        attributes: ['id', 'name', 'description', 'icon', 'type', 'creatorId', 'createdAt'],
+        attributes: ['id', 'name', 'description', 'icon', 'type', 'creatorId','inviteCode', 'createdAt'],
         include: [
           {
             model: db.User,
@@ -1316,6 +1318,139 @@ async function getSingleGroupRequestByGroupId(groupId, userId) {
   }
 }
 
+
+async function generateInviteCode(groupId, adminId, expirationHours) {
+  try {
+    // Fetch the group by ID
+    const group = await db.Group.findByPk(groupId);
+
+    if (!group) {
+      return { message: "Group not found", statusCode: 404, success: false, data: null };
+    }
+
+    // Check if the current user is an admin of the group
+    const adminMembership = await db.GroupMembership.findOne({
+      where: {
+        groupId: group.id,
+        userId: adminId,
+        role: 'ADMIN',
+      },
+    });
+
+    if (!adminMembership) {
+      return { message: "Unauthorized. Only admins can generate invite codes.", statusCode: 403, success: false, data: null };
+    }
+
+    // Generate a random invite code
+    const inviteCode = crypto.randomBytes(8).toString('hex'); // Generates a random 16-character hex string
+
+    // Set expiration time (in hours)
+    const inviteCodeExpiration = new Date();
+    inviteCodeExpiration.setHours(inviteCodeExpiration.getHours() + expirationHours);
+
+    // Update the group with the new invite code and expiration time
+    group.inviteCode = inviteCode;
+    group.inviteCodeExpiration = inviteCodeExpiration;
+
+    await group.save();
+
+    return {
+      message: "Invite code generated successfully",
+      statusCode: 200,
+      success: true,
+      data: {
+        inviteCode,
+        inviteCodeExpiration,
+      },
+    };
+  } catch (error) {
+    console.error("Error generating invite code:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function joinGroup(inviteCode, userId) {
+  try {
+    // Step 1: Check if the invite code exists and is valid
+    const group = await db.Group.findOne({
+      where: {
+        inviteCode: inviteCode,
+        inviteCodeExpiration: { [db.Sequelize.Op.gt]: new Date() }, // Ensure invite code is not expired
+      },
+    });
+
+    if (!group) {
+      return { message: "Invalid or expired invite code", statusCode: 400, success: false, data: null };
+    }
+
+    // Step 2: Check if the user is already a member of the group
+    const existingMembership = await db.GroupMembership.findOne({
+      where: {
+        groupId: group.id,
+        userId: userId,
+      },
+    });
+
+    if (existingMembership) {
+      return { message: "User is already a member of this group", statusCode: 400, success: false, data: null };
+    }
+
+    // Step 3: Add the user to the group membership
+    await db.GroupMembership.create({
+      groupId: group.id,
+      userId: userId,
+      role: 'MEMBER', // Default role for new members
+    });
+
+    return {
+      message: "Successfully joined the group",
+      statusCode: 200,
+      success: true,
+      data: {
+        groupId: group.id,
+        groupName: group.name,
+      },
+    };
+  } catch (error) {
+    console.error("Error joining group with invite code:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function fetchGroupByInviteCode(inviteCode) {
+  try {
+    // Find the group by invite code and check expiration
+    const group = await db.Group.findOne({
+      where: {
+        inviteCode: inviteCode,
+        inviteCodeExpiration: { [db.Sequelize.Op.gt]: new Date() }, // Invite code must not be expired
+      },
+      attributes: ['id', 'name', 'description', 'icon', 'type'], // Only include required fields
+    });
+
+    if (!group) {
+      return { message: "Invalid or expired invite code", statusCode: 400, success: false, data: null };
+    }
+
+    // Return the group details
+    return {
+      message: "Group details fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: {
+        groupId: group.id,
+        groupName: group.name,
+        description: group.description,
+        icon: group.icon,
+        type: group.type,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching group details with invite code:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
   module.exports = {
     createGroup,
     addGroupMember,
@@ -1342,5 +1477,8 @@ async function getSingleGroupRequestByGroupId(groupId, userId) {
     acceptGroupRequests,
     rejectGroupRequests,
     getUserGroupRequests,
-    getSingleGroupRequestByGroupId
+    getSingleGroupRequestByGroupId,
+    generateInviteCode,
+    joinGroup,
+    fetchGroupByInviteCode
   };

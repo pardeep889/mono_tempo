@@ -31,6 +31,8 @@ router.get("/confirm/:link", userController.confirmLink);
 router.post("/confirm-password",userController.confirmPassword);
 router.post("/recover-password",userController.recoverPassword);
 router.get("/fetch/:id",authenticateJWT, userController.fetchUserByIdController);
+router.get("/profile/:username",authenticateJWT, userController.fetchUserByUsernameController);
+
 router.post('/follow', authenticateJWT, userController.followUser); 
 router.post('/remove-follower', authenticateJWT, userController.removeFollower); 
 router.post('/unfollow', authenticateJWT, userController.unfollowUser);
@@ -103,6 +105,10 @@ router.post("/accept-group-requests", authenticateJWT, groupController.acceptGro
 router.post("/reject-group-requests", authenticateJWT, groupController.rejectGroupRequestsController);
 router.get("/user-group-requests", authenticateJWT, groupController.getUserGroupRequestsController);
 router.get("/group-request/:groupId", authenticateJWT, groupController.getGroupRequestByGroupId);
+router.post("/generate-invite-code", authenticateJWT, groupController.generateInviteCodeByAdmin);
+router.post("/join-group", authenticateJWT, groupController.joinGroupWithInviteCode);
+router.get("/group/info/:inviteCode", authenticateJWT, groupController.getGroupDetailsByInviteCode);
+
 
 // Chat Routes
 router.post('/self-chat', authenticateJWT, userController.createSelfChatMessageController);

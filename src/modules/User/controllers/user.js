@@ -30,6 +30,7 @@ const {
   deleteMessage,
   editMessage,
   fetchMessagesAroundId,
+  getUserByUsernameService
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -272,6 +273,17 @@ const fetchUserByIdController = async (req, res) => {
   });
 };
 
+const fetchUserByUsernameController = async (req, res) => {
+  const { username } = req.params;
+  const { start = 0, pageSize = 10 } = req.query;
+  const {userId} = req.user;
+  const { message, success, statusCode, data } = await getUserByUsernameService(userId, username, parseInt(start), parseInt(pageSize));
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
 const followUser = async (req, res) => {
   const { userId } = req.body;
   const followerId = req.user.userId;
@@ -634,5 +646,6 @@ module.exports = {
   fetchPinnedSelfMessagesController,
   deleteMessageController,
   editMessageController,
-  fetchSroundedMessagesOfPinnedMessage
+  fetchSroundedMessagesOfPinnedMessage,
+  fetchUserByUsernameController
 };

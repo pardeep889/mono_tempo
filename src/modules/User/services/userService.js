@@ -52,6 +52,67 @@ async function getUserByIdService(id, userId, start = 0, pageSize = 10) {
 
     const userWithFollowData = {
       ...user.toJSON(),
+      shareLink: `/profile/${user.username}`,
+      following: following.rows.map(f => f.followed),
+      followingCount: following.count,
+      followers: followers.rows.map(f => f.follower),
+      followersCount: followers.count,
+      isFollowing: !!isFollowing
+    };
+
+    return { message: "User Profile Fetched Successfully", statusCode: 200, success: true, data: userWithFollowData };
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+  }
+}
+
+async function getUserByUsernameService(id, username, start = 0, pageSize = 10) {
+  try {
+    // Find user by username
+    const user = await db.User.findOne({
+      where: { username },
+      attributes: { exclude: ['password', 'forgotLink'] },
+    });
+
+    if (!user) {
+      return { message: "User not found", statusCode: 404, success: false, data: null };
+    }
+
+    const userId = user.id; // Get userId from the fetched user
+
+    // Fetch following users
+    const following = await db.Follow.findAndCountAll({
+      where: { followerId: userId },
+      include: [{
+        model: db.User,
+        as: 'followed',
+        attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+      }],
+      limit: pageSize,
+      offset: start
+    });
+
+    // Fetch followers
+    const followers = await db.Follow.findAndCountAll({
+      where: { followedId: userId },
+      include: [{
+        model: db.User,
+        as: 'follower',
+        attributes: ['id', 'username', 'fullName', 'profileImageUrl', 'uid'],
+      }],
+      limit: pageSize,
+      offset: start
+    });
+
+    // Check if the user is followed by the current user (id)
+    const isFollowing = await db.Follow.findOne({
+      where: { followerId: id, followedId: userId },
+    });
+
+    const userWithFollowData = {
+      ...user.toJSON(),
+      shareLink: `/profile/${user.username}`,
       following: following.rows.map(f => f.followed),
       followingCount: following.count,
       followers: followers.rows.map(f => f.follower),
@@ -877,6 +938,8 @@ async function fetchPrivateMessages(userId, chatId, limit = 10, lastMessageId = 
       chatId: chat.id, // Filter messages by chatId
     };
 
+    let order = [['createdAt', 'DESC']]; // Default order is descending
+
     // If lastMessageId is provided, adjust the query based on 'type'
     if (lastMessageId) {
       const lastMessage = await db.Message.findByPk(lastMessageId);
@@ -887,7 +950,8 @@ async function fetchPrivateMessages(userId, chatId, limit = 10, lastMessageId = 
       if (type === 'older') {
         whereCondition.createdAt = { [db.Sequelize.Op.lt]: lastMessage.createdAt };
       } else if (type === 'newer') {
-        whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt };
+        whereCondition.createdAt = { [db.Sequelize.Op.gt]: lastMessage.createdAt }; // Get newer messages
+        order = [['createdAt', 'ASC']]; // Change the order to ascending for newer messages
       } else {
         return { message: 'Invalid type parameter', statusCode: 400, success: false, data: null };
       }
@@ -908,7 +972,7 @@ async function fetchPrivateMessages(userId, chatId, limit = 10, lastMessageId = 
           attributes: ['id', 'fullName', 'email'],
         },
       ],
-      order: [['createdAt', 'DESC']], // Keep descending order to get the latest messages first
+      order, // Use the dynamically set order
       limit,
     });
 
@@ -923,6 +987,7 @@ async function fetchPrivateMessages(userId, chatId, limit = 10, lastMessageId = 
     return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
   }
 }
+
 
 
 async function fetchChatDetails(userId, page, limit) {
@@ -1295,5 +1360,6 @@ module.exports = {
   fetchPinnedSelfMessages: fetchPinnedSelfMessages,
   deleteMessage: deleteMessage,
   editMessage: editMessage,
-  fetchMessagesAroundId: fetchMessagesAroundId
+  fetchMessagesAroundId: fetchMessagesAroundId,
+  getUserByUsernameService: getUserByUsernameService
 };

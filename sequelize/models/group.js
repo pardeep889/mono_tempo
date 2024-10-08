@@ -30,6 +30,14 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      inviteCode: {
+        type: DataTypes.STRING(255),
+        allowNull: true, // Nullable until an invite code is generated
+      },
+      inviteCodeExpiration: {
+        type: DataTypes.DATE,
+        allowNull: true, // Nullable until an expiration time is set
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

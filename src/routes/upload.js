@@ -43,6 +43,8 @@ const allowedAttachmentTypes = [
   'video/x-flv', // FLV
   'video/webm',  // WEBM
   'video/quicktime', // MOV
+  'video/3gpp',  // 3GP (added)
+
 
   // Images
   ...allowedImageTypes // Include image types for attachments as well
