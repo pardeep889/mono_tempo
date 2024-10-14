@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tempospace",
+      "sha256_cert_fingerprints":
+      ["22:C8:F8:50:AB:A6:29:6F:45:D1:C0:BC:FA:C4:FE:9A:60:46:AF:34:1B:11:33:C7:49:6A:C4:7D:FF:7B:05:CD"]
+    }
+  }
+]

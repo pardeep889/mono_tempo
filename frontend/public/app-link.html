@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempo Links</title>
+</head>
+
+<body>
+<h1>Tempo Links</h1>
+<br />
+<p>Click the button below to download Tempo app or launch link from the app if it is already installed</p>
+<button id="redirect" href="#" onclick="launchApp()">Launch App</button>
+<br />
+<br />
+<h3>Clipboard Permission</h3>
+<p>This page may request your permission to use your device's clipboard. We use this mechanism to save the link you
+    intend to visit within our app. If you have already rejected this permission, please refresh this page and allow
+    the permission.</p>
+<script>
+        let realPath;
+        let storeUrl;
+
+        const getMobileOS = () => {
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) {
+                return "Android";
+            } else if (/iPad|iPhone|iPod/.test(ua)) {
+                return "iOS";
+            }
+            return "Other";
+        }
+
+        const prepare = async () => {
+            const os = getMobileOS();
+            const urlParams = new URLSearchParams(window.location.search);
+            let ref = urlParams.get('ref') || "/";
+            realPath = `https://tempospace.azurewebsites.net${ref.split('?')[0]}`;
+            let combinedParams = new URLSearchParams();
+
+            if (ref.includes('?')) {
+                const refQueryParams = new URLSearchParams(ref.split('?')[1]);
+                refQueryParams.forEach((value, key) => {
+                    combinedParams.append(key, value);
+                });
+            }
+
+            urlParams.forEach((value, key) => {
+                if (key !== 'ref') {
+                    combinedParams.append(key, value);
+                }
+            });
+
+            if (combinedParams.toString()) {
+                realPath += '?' + combinedParams.toString();
+            }
+
+            if (os === 'Android') {
+                storeUrl = "https://play.google.com/store/apps/details?id=com.tempospace";
+            } else if (os === 'iOS') {
+                storeUrl = "https://apps.apple.com/us/app/tempo-social-discovery/id1621991274";
+            }
+
+            // Attempt to open the app using the custom URL scheme
+            // const iframe = document.createElement('iframe');
+            // iframe.style.display = 'none';
+            // iframe.src = appSchemaUrl;
+            // document.body.appendChild(iframe);
+
+            // // If the app is not installed, fallback to redirecting to the app store
+            // setTimeout(() => {
+            //     window.location.href = redirectUrl;
+            // }, 2000); // 2 seconds timeout to try opening the app
+        };
+
+        let timeout;
+
+        const launchApp = async () => {
+            if (!realPath) {
+                alert("Sorry, this page did not load correctly. Please refresh and try again");
+            } else {
+                const appSchemaUrl = realPath.replace('https://', 'tempo://');
+
+                timeout = setTimeout(async () => {
+                    try {
+                        await navigator.clipboard.writeText(realPath);
+                        window.location.href = storeUrl || realPath;
+                    } catch (err) {
+                        alert('Failed to copy to clipboard: ', err);
+                    }
+                }, 2000);
+                window.location.href = appSchemaUrl;
+
+            }
+        }
+
+        window.addEventListener("load", () => {
+            prepare();
+        });
+    </script>
+</body>
+
+</html>

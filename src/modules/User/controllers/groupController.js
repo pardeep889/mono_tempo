@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId, generateInviteCode, joinGroup, fetchGroupByInviteCode, clearGroupRequests } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId, generateInviteCode, joinGroup, fetchGroupByInviteCode, clearGroupRequests, deleteGroupRequests } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -389,6 +389,19 @@ const clearGroupRequestsController = async (req, res) => {
   });
 };
 
+const deleteGroupRequestsController = async (req, res) => {
+  const { requestIds } = req.body; // Array of request IDs
+  const userId = req.user.userId; // Get the logged-in user's ID
+
+  const { message, success, statusCode, data } = await deleteGroupRequests(requestIds, userId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data,
+  });
+};
+
 
 
 module.exports = {
@@ -421,5 +434,6 @@ module.exports = {
   generateInviteCodeByAdmin,
   joinGroupWithInviteCode,
   getGroupDetailsByInviteCode,
-  clearGroupRequestsController
+  clearGroupRequestsController,
+  deleteGroupRequestsController
 };

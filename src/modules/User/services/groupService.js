@@ -1500,6 +1500,59 @@ async function clearGroupRequests(groupId, adminId) {
     };
   }
 }
+async function deleteGroupRequests(requestIds, userId) {
+  try {
+    // Check if all provided requestIds belong to the user
+    const requests = await db.GroupRequest.findAll({
+      where: {
+        id: requestIds,
+        userId, // Ensure that the requests belong to the current user
+      },
+    });
+
+    // If no requests found for the given requestIds and userId
+    if (requests.length === 0) {
+      return {
+        message: "No group requests found for the given user",
+        statusCode: 404,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Delete the found requests
+    const deletedCount = await db.GroupRequest.destroy({
+      where: {
+        id: requestIds,
+        userId, // Only delete requests belonging to the current user
+      },
+    });
+
+    if (deletedCount > 0) {
+      return {
+        message: `Successfully deleted ${deletedCount} group request(s).`,
+        statusCode: 200,
+        success: true,
+        data: { deletedCount },
+      };
+    } else {
+      return {
+        message: "No requests were deleted",
+        statusCode: 400,
+        success: false,
+        data: null,
+      };
+    }
+  } catch (error) {
+    console.error("Error deleting group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
 
 
   module.exports = {
@@ -1532,5 +1585,6 @@ async function clearGroupRequests(groupId, adminId) {
     generateInviteCode,
     joinGroup,
     fetchGroupByInviteCode,
-    clearGroupRequests
+    clearGroupRequests,
+    deleteGroupRequests
   };

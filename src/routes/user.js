@@ -6,7 +6,7 @@ const groupController = require('../modules/User/controllers/groupController');
 const deviceController = require('../modules/User/controllers/deviceController');
 const billboardController = require('../modules/User/controllers/billboardController');
 const privacyController = require('../modules/User/controllers/privacySettingsController');
-
+const notificationController = require('../modules/User/controllers/notificationSettingsController')
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -111,6 +111,7 @@ router.post("/generate-invite-code", authenticateJWT, groupController.generateIn
 router.post("/join-group", authenticateJWT, groupController.joinGroupWithInviteCode);
 router.get("/group/info/:inviteCode", authenticateJWT, groupController.getGroupDetailsByInviteCode);
 router.post("/clear-group-requests", authenticateJWT, groupController.clearGroupRequestsController);
+router.delete("/delete-group-requests", authenticateJWT, groupController.deleteGroupRequestsController);
 
 
 // Chat Routes
@@ -176,5 +177,10 @@ router.get('/privacy/restricted-users', authenticateJWT, privacyController.fetch
 router.post('/privacy/hide-story', authenticateJWT, privacyController.hideStoryFromUsers);
 router.post('/privacy/not-hide-story', authenticateJWT, privacyController.notHideStoryFromUsers);
 router.get('/privacy/hide-story-users', authenticateJWT, privacyController.fetchHideStoryFromUsers);
+
+// User Notification Settings 
+router.get('/notifications/settings', authenticateJWT, notificationController.getUserNotificationSettings);
+router.put('/notifications/settings', authenticateJWT, notificationController.updateUserNotificationSettings);
+
 
 module.exports = router;
