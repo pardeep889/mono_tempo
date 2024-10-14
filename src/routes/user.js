@@ -5,6 +5,8 @@ const userController = require("../modules/User/controllers/user")
 const groupController = require('../modules/User/controllers/groupController');
 const deviceController = require('../modules/User/controllers/deviceController');
 const billboardController = require('../modules/User/controllers/billboardController');
+const privacyController = require('../modules/User/controllers/privacySettingsController');
+
 
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -108,6 +110,7 @@ router.get("/group-request/:groupId", authenticateJWT, groupController.getGroupR
 router.post("/generate-invite-code", authenticateJWT, groupController.generateInviteCodeByAdmin);
 router.post("/join-group", authenticateJWT, groupController.joinGroupWithInviteCode);
 router.get("/group/info/:inviteCode", authenticateJWT, groupController.getGroupDetailsByInviteCode);
+router.post("/clear-group-requests", authenticateJWT, groupController.clearGroupRequestsController);
 
 
 // Chat Routes
@@ -158,4 +161,20 @@ router.delete('/billboard/delete/:billboardId', authenticateJWT, billboardContro
 router.put('/billboard/update/:billboardId',authenticateJWT, billboardController.updateBillboardController);
 router.get('/billboard/fetch/:chatId',authenticateJWT, billboardController.fetchBillboardsController);
 router.delete('/billboard/delete-all/:chatId', authenticateJWT, billboardController.deleteBillboardsController);
+
+
+// Privacy Settings 
+router.get('/privacy/user-privacy-settings', authenticateJWT, privacyController.getUserPrivacySettings);
+router.put('/privacy/user-privacy-settings', authenticateJWT, privacyController.updateUserPrivacySettings);
+
+router.post('/privacy/block-user', authenticateJWT, privacyController.blockUser);
+router.post('/privacy/unblock-user', authenticateJWT, privacyController.unblockUser);
+router.post('/privacy/restrict-user', authenticateJWT, privacyController.restrictUser);
+router.post('/privacy/unrestrict-user', authenticateJWT, privacyController.unrestrictUser);
+router.get('/privacy/blocked-users', authenticateJWT, privacyController.fetchBlockedUsers);
+router.get('/privacy/restricted-users', authenticateJWT, privacyController.fetchRestrictedUsers);
+router.post('/privacy/hide-story', authenticateJWT, privacyController.hideStoryFromUsers);
+router.post('/privacy/not-hide-story', authenticateJWT, privacyController.notHideStoryFromUsers);
+router.get('/privacy/hide-story-users', authenticateJWT, privacyController.fetchHideStoryFromUsers);
+
 module.exports = router;

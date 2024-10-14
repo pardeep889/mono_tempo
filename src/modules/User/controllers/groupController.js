@@ -2,7 +2,7 @@
 
 const { sendNotificationToUser } = require('../../Notification/services/notificationService');
 const { fetchUserDetailsUtilService, fetchGroupDetailsUtilService } = require('../../util/util');
-const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId, generateInviteCode, joinGroup, fetchGroupByInviteCode } = require('../services/groupService');
+const { createGroup, addGroupMember, fetchUserGroups, inviteUserToGroup, acceptGroupInvite, makeAdmin, fetchMyInvites, updateGroupDescription, leaveGroup, fetchGroupUsers, removeUserFromGroupService, getGroupDetails, searchGroups, togglePinMessageGroup, togglePrivatePinnedMessage, toggleSelfPinnedMessage, deleteGroupMessage, removeGroupMember, adminToMember, joinPublicGroup, requestJoinPrivateGroup, fetchGroupRequests, acceptGroupRequests, rejectGroupRequests, getUserGroupRequests, getSingleGroupRequestByGroupId, generateInviteCode, joinGroup, fetchGroupByInviteCode, clearGroupRequests } = require('../services/groupService');
 
 const createGroupController = async (req, res) => {
   const { name, description,icon, type, members } = req.body;
@@ -377,6 +377,18 @@ const getGroupDetailsByInviteCode = async (req, res) => {
   });
 }
 
+const clearGroupRequestsController = async (req, res) => {
+  const { groupId } = req.body;
+  const adminId = req.user.userId;
+
+  const { message, success, statusCode, data } = await clearGroupRequests(groupId, adminId);
+  return res.status(statusCode).json({
+    success,
+    message,
+    data
+  });
+};
+
 
 
 module.exports = {
@@ -408,5 +420,6 @@ module.exports = {
   getGroupRequestByGroupId,
   generateInviteCodeByAdmin,
   joinGroupWithInviteCode,
-  getGroupDetailsByInviteCode
+  getGroupDetailsByInviteCode,
+  clearGroupRequestsController
 };

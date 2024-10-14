@@ -1086,6 +1086,8 @@ async function fetchGroupRequests(groupId, adminId) {
     const requests = await db.GroupRequest.findAll({
       where: { groupId, status: "PENDING" },
       include: [{ model: db.User, attributes: ['id', 'username', 'fullName'] }],
+      order: [['createdAt', 'DESC']]  // Sort by createdAt in descending order
+
     });
 
     return {
@@ -1237,7 +1239,7 @@ async function rejectGroupRequests(groupId, userIds, adminId) {
 }
 async function getUserGroupRequests(userId) {
   try {
-    // Fetch all group requests for the current user
+    // Fetch all group requests for the current user, sorted by createdAt DESC
     const groupRequests = await db.GroupRequest.findAll({
       where: { userId },
       include: [
@@ -1245,7 +1247,8 @@ async function getUserGroupRequests(userId) {
           model: db.Group,  // No alias needed here
           attributes: ["id", "name", "type", "icon", "createdAt"]
         }
-      ]
+      ],
+      order: [['createdAt', 'DESC']]  // Sort by createdAt in descending order
     });
 
     if (groupRequests.length === 0) {
@@ -1451,6 +1454,54 @@ async function fetchGroupByInviteCode(inviteCode) {
   }
 }
 
+async function clearGroupRequests(groupId, adminId) {
+  try {
+    // Verify if the user performing the operation is an admin of the group
+    const isAdmin = await db.GroupMembership.findOne({
+      where: { groupId, userId: adminId, role: "ADMIN" },
+    });
+
+    if (!isAdmin) {
+      return {
+        message: "Only admins can clear group requests",
+        statusCode: 403,
+        success: false,
+        data: null,
+      };
+    }
+
+    // Delete all pending group requests for the given groupId
+    const deletedCount = await db.GroupRequest.destroy({
+      where: { groupId, status: "PENDING" },
+    });
+
+    if (deletedCount > 0) {
+      return {
+        message: `Successfully cleared ${deletedCount} group request(s).`,
+        statusCode: 200,
+        success: true,
+        data: { deletedCount },
+      };
+    } else {
+      return {
+        message: "No pending group requests to clear",
+        statusCode: 400,
+        success: false,
+        data: null,
+      };
+    }
+  } catch (error) {
+    console.error("Error clearing group requests:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
+
+
   module.exports = {
     createGroup,
     addGroupMember,
@@ -1480,5 +1531,6 @@ async function fetchGroupByInviteCode(inviteCode) {
     getSingleGroupRequestByGroupId,
     generateInviteCode,
     joinGroup,
-    fetchGroupByInviteCode
+    fetchGroupByInviteCode,
+    clearGroupRequests
   };
