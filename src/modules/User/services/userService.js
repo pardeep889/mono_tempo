@@ -1330,6 +1330,42 @@ async function fetchMessagesAroundId(messageId) {
   }
 }
 
+const reportFeedbackService = async (userId, subject, description, screenshot) => {
+  try {
+    // Validate the input (you can add more validations as needed)
+    if (!userId || !subject || !description) {
+      return {
+        success: false,
+        message: "User ID, subject, and description are required.",
+        statusCode: 400,
+        data: null
+      };
+    }
+
+    // Create the feedback entry in the database
+    const feedback = await db.Feedback.create({
+      userId,
+      subject,
+      description,
+      screenshot, // This can be null if not provided
+    });
+
+    return {
+      success: true,
+      message: "Feedback submitted successfully.",
+      statusCode: 201,
+      data: { feedbackId: feedback.id }
+    };
+  } catch (error) {
+    console.error("Error in reportFeedbackService:", error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+      statusCode: 500,
+      data: null
+    };
+  }
+};
 
 module.exports = {
   userLogin: userLogin,
@@ -1361,5 +1397,6 @@ module.exports = {
   deleteMessage: deleteMessage,
   editMessage: editMessage,
   fetchMessagesAroundId: fetchMessagesAroundId,
-  getUserByUsernameService: getUserByUsernameService
+  getUserByUsernameService: getUserByUsernameService,
+  reportFeedbackService: reportFeedbackService
 };

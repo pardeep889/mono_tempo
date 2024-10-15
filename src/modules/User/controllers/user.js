@@ -30,7 +30,8 @@ const {
   deleteMessage,
   editMessage,
   fetchMessagesAroundId,
-  getUserByUsernameService
+  getUserByUsernameService,
+  reportFeedbackService
 } = require("../services/userService");
 const { changePasswordSchema } = require("../validation/changePasswordSchema");
 const { verifyLinkSchema } = require("../validation/verifyLinkSchema");
@@ -617,6 +618,26 @@ const fetchSroundedMessagesOfPinnedMessage = async (req, res) => {
     return res.status(500).json(result);
   }
 };
+
+const reportFeedbackController = async (req, res) => {
+  const {  subject, description, screenshot } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    const { success, message, statusCode, data } = 
+      await reportFeedbackService(userId, subject, description, screenshot);
+
+    return res.status(statusCode).json({ success, message, data });
+  } catch (error) {
+    console.error("Error reporting feedback:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   logingUser,
   createUser,
@@ -647,5 +668,6 @@ module.exports = {
   deleteMessageController,
   editMessageController,
   fetchSroundedMessagesOfPinnedMessage,
-  fetchUserByUsernameController
+  fetchUserByUsernameController,
+  reportFeedbackController
 };

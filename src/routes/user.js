@@ -88,6 +88,8 @@ router.post("/groups/:groupId/invite", authenticateJWT, groupController.inviteUs
 router.post("/groups/:groupId/accept-invite", authenticateJWT, groupController.acceptGroupInviteController);
 router.post("/groups/:groupId/make-admin", authenticateJWT, groupController.makeAdminController);
 router.get('/my-invites', authenticateJWT, groupController.fetchMyInvitesController);
+router.post('/invites/reject', authenticateJWT, groupController.rejectInviteController);
+
 router.put('/group/:groupId/update', authenticateJWT, groupController.updateGroupDescriptionController);
 router.post('/leave-group', authenticateJWT, groupController.leaveGroupController);
 router.get('/group/:groupId/users', authenticateJWT, groupController.fetchGroupUsersController);
@@ -181,6 +183,15 @@ router.get('/privacy/hide-story-users', authenticateJWT, privacyController.fetch
 // User Notification Settings 
 router.get('/notifications/settings', authenticateJWT, notificationController.getUserNotificationSettings);
 router.put('/notifications/settings', authenticateJWT, notificationController.updateUserNotificationSettings);
+
+// user group settings
+router.put("/group/update-group-settings", authenticateJWT, groupController.updateGroupSettingsController);
+router.get("/group/fetch-group-settings/:groupId", authenticateJWT, groupController.fetchGroupSettingsController);
+
+
+
+// Feedback
+router.post("/feedback", authenticateJWT, userController.reportFeedbackController);
 
 
 module.exports = router;

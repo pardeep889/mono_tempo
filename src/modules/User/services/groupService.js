@@ -291,7 +291,7 @@ async function createGroup(creatorId, name, description, type, members, icon) {
     try {
       // Fetch all invites where the user is the invited one
       const invites = await db.GroupInvite.findAll({
-        where: { invitedUserId: userId },
+        where: { invitedUserId: userId , status: 'PENDING'},
         include: [
           {
             model: db.Group,
@@ -316,6 +316,33 @@ async function createGroup(creatorId, name, description, type, members, icon) {
       return { message: "Internal Server Error", statusCode: 500, success: false ,data: null};
     }
   }
+
+  async function rejectInviteService(userId, inviteId) {
+    try {
+      // Fetch the invite to ensure it belongs to the user
+      const invite = await db.GroupInvite.findOne({
+        where: {
+          id: inviteId,
+          invitedUserId: userId, // Ensure the invite is for the logged-in user
+          status: 'PENDING' // Only pending invites can be rejected
+        }
+      });
+  
+      if (!invite) {
+        return { message: "Invite not found or already processed", statusCode: 404, success: false, data: null };
+      }
+  
+      // Update the invite status to 'REJECTED'
+      await invite.update({ status: 'REJECTED' });
+  
+      return { message: "Invite rejected successfully", statusCode: 200, success: true, data: null };
+  
+    } catch (error) {
+      console.error("Error rejecting invite:", error);
+      return { message: "Internal Server Error", statusCode: 500, success: false, data: null };
+    }
+  }
+  
   
   async function updateGroupDescription(groupId, userId, name, description, icon) {
     try {
@@ -1553,8 +1580,99 @@ async function deleteGroupRequests(requestIds, userId) {
     };
   }
 }
+const updateGroupSettingsService = async (userId, groupId, settings) => {
+  try {
+    // Check if the user is a member of the group (admin or member)
+    const membership = await db.GroupMembership.findOne({
+      where: { groupId, userId }
+    });
 
+    if (!membership) {
+      return {
+        success: false,
+        message: "You must be a member or admin of the group to update settings",
+        statusCode: 403,
+        data: null
+      };
+    }
 
+    // Find or create the UserGroupSettings record for this user and group
+    const [userGroupSettings, created] = await db.UserGroupSettings.findOrCreate({
+      where: { groupId, userId },
+      defaults: settings
+    });
+
+    // If record already exists, update it with whatever fields were passed in the body
+    if (!created) {
+      await userGroupSettings.update(settings);
+    }
+
+    return {
+      success: true,
+      message: "Group settings updated successfully",
+      statusCode: 200,
+      data: userGroupSettings
+    };
+
+  } catch (error) {
+    console.error("Error in updateGroupSettingsService:", error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+      statusCode: 500,
+      data: null
+    };
+  }
+}
+
+// Service for fetching user group settings
+const fetchGroupSettingsService =  async (userId, groupId) => {
+  try {
+    // Check if the user is a member of the group (admin or member)
+    const membership = await db.GroupMembership.findOne({
+      where: { groupId, userId }
+    });
+
+    if (!membership) {
+      return {
+        success: false,
+        message: "You must be a member or admin of the group to fetch settings",
+        statusCode: 403,
+        data: null
+      };
+    }
+
+    // Fetch the user group settings
+    const userGroupSettings = await db.UserGroupSettings.findOne({
+      where: { groupId, userId }
+    });
+
+    if (!userGroupSettings) {
+      return {
+        success: false,
+        message: "Group settings not found for the user",
+        statusCode: 404,
+        data: null
+      };
+    }
+
+    return {
+      success: true,
+      message: "Group settings fetched successfully",
+      statusCode: 200,
+      data: userGroupSettings
+    };
+
+  } catch (error) {
+    console.error("Error in fetchGroupSettingsService:", error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+      statusCode: 500,
+      data: null
+    };
+  }
+}
   module.exports = {
     createGroup,
     addGroupMember,
@@ -1586,5 +1704,8 @@ async function deleteGroupRequests(requestIds, userId) {
     joinGroup,
     fetchGroupByInviteCode,
     clearGroupRequests,
-    deleteGroupRequests
+    deleteGroupRequests,
+    fetchGroupSettingsService,
+    updateGroupSettingsService,
+    rejectInviteService
   };
