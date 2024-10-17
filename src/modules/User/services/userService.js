@@ -780,7 +780,7 @@ async function fetchSelfChatMessages(userId, limit = 10, lastMessageId = null, t
 }
 
 
-async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
+async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io, info) {
   try {
 
     // check chat
@@ -806,11 +806,14 @@ async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io) {
       senderId,
       groupId,
       isSelfChat: false,
-      chatId: chat.id
+      chatId: chat.id,
+      isInfo: info
     });
 
     // Broadcast the message to all members of the group
-    io.to(groupId).emit('newMessage', message);
+    if(io){
+      io.to(groupId).emit('newMessage', message);
+    }
 
     return {
       message: "Message sent successfully",

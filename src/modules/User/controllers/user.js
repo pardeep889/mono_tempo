@@ -449,11 +449,11 @@ async function fetchSelfChatMessagesController(req, res) {
 
 async function sendMessageToGroupController(req, res) {
   const { groupId } = req.params;
-  const { text, attachmentUrl } = req.body;
+  const { text, attachmentUrl, info } = req.body;
   const senderId = req.user.userId;
   const fullName = req.user.fullName;
 
-  const { message, statusCode, success, data } = await sendMessageToGroup(groupId, senderId, text, attachmentUrl, req.app.get('io'));
+  const { message, statusCode, success, data } = await sendMessageToGroup(groupId, senderId, text, attachmentUrl, req.app.get('io'),info);
 
   if(success){
     setImmediate(async () => {

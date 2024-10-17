@@ -2,6 +2,8 @@
 const { Op } = require("sequelize");
 const db = require("../../../../sequelize/models");
 const crypto = require("crypto"); // For generating random invite codes
+const { sendMessageToGroup } = require("./userService");
+const { fetchUserDetailsUtilService } = require("../../util/util");
 
 async function createGroup(creatorId, name, description, type, members, icon) {
   console.log(
@@ -40,6 +42,9 @@ async function createGroup(creatorId, name, description, type, members, icon) {
         });
       }
     }
+
+    // Send Info Message in the group
+    await sendMessageToGroup(group.id, creatorId, "Group is created", "", null, true)
 
     return {
       message: "Group created successfully",
@@ -1278,6 +1283,8 @@ async function joinPublicGroup(groupId, userId) {
         userId,
       },
     });
+    const userData = await fetchUserDetailsUtilService(userId); 
+    await sendMessageToGroup(groupId, userId, `${userData.fullName} Joined The Group`, "", null, true)
 
     if (existingMembership) {
       return {
