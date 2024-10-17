@@ -502,7 +502,6 @@ async function updateGroupDescription(
     };
   }
 }
-
 async function leaveGroup(userId, groupId) {
   try {
     // Check if the user is a member of the group
@@ -517,6 +516,24 @@ async function leaveGroup(userId, groupId) {
         success: false,
         data: null,
       };
+    }
+
+    // Check if the user is an admin of the group
+    if (groupMembership.role === 'ADMIN') {
+      // Check if there are other admins in the group
+      const otherAdmins = await db.GroupMembership.findAll({
+        where: { groupId: groupId, role: 'ADMIN', userId: { [db.Sequelize.Op.ne]: userId } }
+      });
+
+      // If this user is the last admin, they cannot leave without assigning another admin
+      if (otherAdmins.length === 0) {
+        return {
+          message: "You are the last admin of this group. Please assign another admin before leaving.",
+          statusCode: 403,
+          success: false,
+          data: null,
+        };
+      }
     }
 
     // Remove the user from the group
@@ -538,6 +555,7 @@ async function leaveGroup(userId, groupId) {
     };
   }
 }
+
 
 async function fetchGroupUsers(groupId, page, limit) {
   try {
