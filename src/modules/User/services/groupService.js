@@ -2,7 +2,7 @@
 const { Op } = require("sequelize");
 const db = require("../../../../sequelize/models");
 const crypto = require("crypto"); // For generating random invite codes
-const { sendMessageToGroup } = require("./userService");
+const { sendMessageToGroup, sendMessageToUser } = require("./userService");
 const { fetchUserDetailsUtilService } = require("../../util/util");
 
 async function createGroup(creatorId, name, description, type, members, icon) {
@@ -544,6 +544,9 @@ async function leaveGroup(userId, groupId) {
     // Remove the user from the group
     await groupMembership.destroy();
 
+    const userData = await fetchUserDetailsUtilService(userId); 
+    await sendMessageToGroup(groupId, userId, `${userData.fullName} Left The Group`, "", null, true)
+
     return {
       message: "Successfully left the group",
       statusCode: 200,
@@ -883,6 +886,9 @@ async function togglePinMessageGroup(groupId, messageId, userId) {
       message.isPinned = true;
       await message.save();
 
+      const userData = await fetchUserDetailsUtilService(userId); 
+      await sendMessageToGroup(groupId, userId, `${userData.fullName} Pinned a message`, "", null, true)
+
       return {
         message: "Message pinned successfully",
         statusCode: 200,
@@ -954,9 +960,12 @@ async function togglePrivatePinnedMessage(messageId, userId) {
         { isPinned: false },
         { where: { id: messageId, senderId: userId, isPinned: true } }
       );
+      const userData = await fetchUserDetailsUtilService(userId); 
+      await sendMessageToUser(message.chatId, message.senderId, message.receiverId, `${userData.fullName} Pinned a message`, "", null , true)
 
       // Pin the selected message
       message.isPinned = true;
+      message.isInfo = true;
       await message.save();
 
       return {

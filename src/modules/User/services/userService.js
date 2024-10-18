@@ -827,7 +827,7 @@ async function sendMessageToGroup(groupId, senderId, text, attachmentUrl, io, in
   }
 }
 
-async function sendMessageToUser(chatId, senderId, receiverId, text, attachmentUrl, io) {
+async function sendMessageToUser(chatId, senderId, receiverId, text, attachmentUrl, io, isInfo) {
   try {
         // check chat
     let chat = await db.Chat.findOne({ where: { id: chatId, type: 'PRIVATE' } });
@@ -853,11 +853,13 @@ async function sendMessageToUser(chatId, senderId, receiverId, text, attachmentU
       senderId,
       receiverId,
       isSelfChat: false,
-      chatId: chat.id
+      chatId: chat.id,
+      isInfo: isInfo ? isInfo : false
     });
-
-    // Broadcast the message to the receiver
-    io.to(receiverId).emit('newMessage', message);
+    if(io){
+      // Broadcast the message to the receiver
+      io.to(receiverId).emit('newMessage', message);
+    }
 
     return {
       message: "Message sent successfully",

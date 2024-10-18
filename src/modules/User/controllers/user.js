@@ -472,14 +472,14 @@ async function sendMessageToGroupController(req, res) {
 }
 
 async function sendMessageToUserController(req, res) {
-  const { receiverId } = req.params;  // Change groupId to receiverId
-  const { text, attachmentUrl, chatId } = req.body;
+  const { receiverId } = req.params;  //  receiverId
+  const { text, attachmentUrl, chatId , isInfo } = req.body;
   const senderId = req.user.userId;  // Sender user ID from authenticated user
   const fullName = req.user.fullName;
 
   sendNotificationToUser(senderId, receiverId, `New Private Message from ${fullName}` , text ,"private-message", senderId);
   // Call sendMessageToUser with the correct parameters: senderId, receiverId, text, attachmentUrl
-  const { message, statusCode, success, data } = await sendMessageToUser(chatId, senderId, receiverId, text, attachmentUrl, req.app.get('io'));
+  const { message, statusCode, success, data } = await sendMessageToUser(chatId, senderId, receiverId, text, attachmentUrl, req.app.get('io'), isInfo);
 
   // Return the response with the correct format
   return res.status(statusCode).json({
