@@ -42,6 +42,7 @@ const {
   updateGroupSettingsService,
   fetchGroupSettingsService,
   rejectInviteService,
+  deleteGroup,
 } = require("../services/groupService");
 
 const createGroupController = async (req, res) => {
@@ -61,6 +62,20 @@ const createGroupController = async (req, res) => {
     data,
   });
 };
+
+const deleteGroupController = async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.userId; // Assuming `authenticateJWT` middleware adds `user` to `req`
+  
+  const { message, success, statusCode, data } = await deleteGroup(groupId, userId);
+
+  return res.status(statusCode).json({
+    success,
+    message,
+    data : data || null
+  });
+};
+
 
 const addGroupMemberController = async (req, res) => {
   const { groupId, userId } = req.body; // userId is now an array
@@ -626,5 +641,6 @@ module.exports = {
   deleteGroupRequestsController,
   updateGroupSettingsController,
   fetchGroupSettingsController,
-  rejectInviteController
+  rejectInviteController,
+  deleteGroupController
 };

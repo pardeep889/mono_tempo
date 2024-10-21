@@ -63,6 +63,85 @@ async function createGroup(creatorId, name, description, type, members, icon) {
   }
 }
 
+
+async function deleteGroup(groupId, userId) {
+  try {
+    // Check if the group exists
+    const group = await db.Group.findOne({ where: { id: groupId } });
+    if (!group) {
+      return {
+        message: "Group not found",
+        statusCode: 404,
+        success: false,
+      };
+    }
+
+    // Check if the user is the admin of the group
+    const groupAdmin = await db.GroupMembership.findOne({
+      where: {
+        groupId,
+        userId,
+        role: "ADMIN",
+      },
+    });
+
+    if (!groupAdmin) {
+      return {
+        message: "Only the admin can delete the group",
+        statusCode: 403,
+        success: false,
+      };
+    }
+
+    // Delete all messages related to the group
+    await db.Message.destroy({
+      where: { groupId },
+    });
+
+    // Delete all GroupRequest related to the group
+    await db.GroupRequest.destroy({
+      where: { groupId },
+    });
+
+    // Delete all Chats related to the group
+    await db.Chat.destroy({
+      where: { groupId },
+    });
+
+    // Delete all UserGroupSettings related to the group
+    await db.UserGroupSettings.destroy({
+      where: { groupId },
+    });
+
+    // Delete all GroupInvite related to the group
+    await db.GroupInvite.destroy({
+      where: { groupId },
+    });
+
+    // Delete all group memberships
+    await db.GroupMembership.destroy({
+      where: { groupId },
+    });
+
+    // Delete the group
+    await group.destroy();
+
+    return {
+      message: "Group deleted successfully",
+      statusCode: 200,
+      success: true,
+      data: null,
+    };
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    return {
+      message: "Internal Server Error",
+      statusCode: 500,
+      success: false,
+      data: null,
+    };
+  }
+}
 async function addGroupMember(groupId, userIds, adminId) {
   try {
     // Validate if userId is an array
@@ -344,6 +423,8 @@ async function makeAdmin(groupId, adminId, userId) {
 
     // Update the user's role to 'admin'
     await targetMember.update({ role: "ADMIN" });
+    const userData = await fetchUserDetailsUtilService(userId); 
+    await sendMessageToGroup(groupId, userId, `${userData.fullName} is promoted to Admin of the this group`, "", null, true)
 
     return {
       message: "User promoted to admin successfully",
@@ -666,6 +747,8 @@ async function removeUserFromGroupService(groupId, userId, adminId) {
       };
     }
 
+    const userData = await fetchUserDetailsUtilService(userId); 
+    await sendMessageToGroup(groupId, userId, `${userData.fullName} has been removed`, "", null, true)
     // Remove the user from the group
     await db.GroupMembership.destroy({
       where: {
@@ -2035,4 +2118,5 @@ module.exports = {
   fetchGroupSettingsService,
   updateGroupSettingsService,
   rejectInviteService,
+  deleteGroup
 };

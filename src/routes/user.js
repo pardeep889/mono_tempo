@@ -82,6 +82,8 @@ router.post('/refresh-token', verifyRefreshToken, (req, res) => {
 
 // Groups Routes
 router.post("/create-group", authenticateJWT, groupController.createGroupController);
+router.delete("/delete-group/:groupId", authenticateJWT, groupController.deleteGroupController);
+
 router.post("/add-group-member", authenticateJWT, groupController.addGroupMemberController);
 router.get("/my-groups", authenticateJWT, groupController.fetchUserGroupsController);
 router.post("/groups/:groupId/invite", authenticateJWT, groupController.inviteUserToGroupController);
